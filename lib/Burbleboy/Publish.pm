@@ -76,6 +76,8 @@ sub publish_post {
 
     write_meta( $post, $config, 'post' );
 
+    $post->{ tags } = _expand_tags( $post->{ tags }, $config->{ base_uri } );
+
     my $output;
     my $stash = _build_template_stash( $config, $post->{ uri } );
     $tt->process( 'single_post.tt',
