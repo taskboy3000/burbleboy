@@ -320,3 +320,13 @@ abbr[title] {
 .text-small {
     font-size: 80%;
 }
+
+p:has(> code) {
+    background: #333;
+    padding: 1rem;
+}
+
+code {
+    white-space: pre;
+    color: white !important;
+}
