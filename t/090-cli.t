@@ -15,6 +15,10 @@ sub Main {
     test_help_output();
     test_version_output();
     test_unknown_flag();
+    test_no_flags_shows_usage();
+    test_init_creates_config();
+    test_show_conf_with_config();
+    test_show_conf_without_config();
     test_publish_all_with_config();
     test_publish_only_posts();
     test_publish_only_notes();
@@ -22,6 +26,56 @@ sub Main {
     test_verbose_flag();
     test_lock_file_location();
     done_testing();
+}
+
+sub test_no_flags_shows_usage {
+    my $output = `perl "$FindBin::Bin/../bin/burbleboycmd" 2>&1`;
+    is( $?, 0, 'no flags exits 0' );
+    like( $output, qr/USAGE|COMMAND|OPTIONS/i, 'no flags shows usage' );
+}
+
+sub test_init_creates_config {
+    my $site = setup_test_site();
+    local $ENV{ HOME } = $site->{ tmpdir };
+
+    my $output = `perl "$FindBin::Bin/../bin/burbleboycmd" --init 2>&1`;
+    is( $?, 0, '--init exits 0' ) or diag $output;
+    ok( -f "$site->{ tmpdir }/.burbleboy.conf",  'config file created' );
+    ok( -d "$site->{ tmpdir }/burbleboy/source",  'source directory created' );
+    ok( -d "$site->{ tmpdir }/burbleboy/docroot", 'publication directory created' );
+
+    teardown_test_site( $site );
+}
+
+sub test_show_conf_with_config {
+    my $site = setup_test_site();
+    _write_config( $site->{ tmpdir } );
+    _replace_in_file( "$site->{ tmpdir }/.burbleboy.conf",
+        'REPLACE_SOURCE', $site->{ source_dir } );
+    _replace_in_file( "$site->{ tmpdir }/.burbleboy.conf",
+        'REPLACE_PUB', $site->{ publication_dir } );
+    local $ENV{ HOME } = $site->{ tmpdir };
+
+    my $output = `perl "$FindBin::Bin/../bin/burbleboycmd" --show-conf 2>&1`;
+    is( $?, 0, '--show-conf exits 0' ) or diag $output;
+    like( $output, qr/base_uri/, '--show-conf shows base_uri' );
+    like( $output, qr/example\.com/,
+        '--show-conf shows value from config file' );
+
+    teardown_test_site( $site );
+}
+
+sub test_show_conf_without_config {
+    my $site = setup_test_site();
+    local $ENV{ HOME } = $site->{ tmpdir };
+
+    my $output = `perl "$FindBin::Bin/../bin/burbleboycmd" --show-conf 2>&1`;
+    is( $?, 0, '--show-conf exits 0' ) or diag $output;
+    like( $output, qr/No configuration file found/,
+        '--show-conf mentions no config' );
+    like( $output, qr/base_uri/, '--show-conf shows default base_uri' );
+
+    teardown_test_site( $site );
 }
 
 sub test_lock_file_location {

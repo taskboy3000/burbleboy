@@ -343,7 +343,7 @@ sub publish_notes_json {
 }
 
 sub incremental_publish_posts {
-    my ( $config, $tt, $source_dir, $force, $verbose ) = @_;
+    my ( $config, $tt, $source_dir, $force, $verbose, $dryrun ) = @_;
 
     opendir my $dh, $source_dir or die "Cannot read $source_dir: $!";
     my @files =
@@ -364,6 +364,12 @@ sub incremental_publish_posts {
             unless $force
             || needs_update( $source_file, $post->{ publication_file } );
 
+        if ( $dryrun ) {
+            say "(dryrun) Would publish: $file";
+            push @published, $post;
+            next;
+        }
+
         my $result = eval { publish_post( $source_file, $config, $tt ) };
         if ( $@ ) { warn "Error publishing $file: $@" if $verbose; next; }
 
@@ -375,7 +381,7 @@ sub incremental_publish_posts {
 }
 
 sub incremental_publish_notes {
-    my ( $config, $tt, $notes_dir, $force, $verbose ) = @_;
+    my ( $config, $tt, $notes_dir, $force, $verbose, $dryrun ) = @_;
 
     return [] unless -d $notes_dir;
 
@@ -401,6 +407,12 @@ sub incremental_publish_notes {
 
         my $pub_file = $note->{ publication_file };
         next unless $force || needs_update( $source_file, $pub_file );
+
+        if ( $dryrun ) {
+            say "(dryrun) Would publish note: $file";
+            push @published, $note;
+            next;
+        }
 
         my $result = eval { publish_note( $source_file, $config, $tt ) };
         if ( $@ ) {

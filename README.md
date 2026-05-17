@@ -19,7 +19,7 @@ If you used the original Plerd (or the earlier fork), here is what changed:
 | **Config** | Path::Class objects, URI coercion, Moo attributes | Plain hashref + YAML::XS |
 | **Config key names** | `_path` suffix (e.g. `source_path`) | `_path` → `_directory` mapped automatically |
 | **HTML sanitization** | None | Whitelist-based XSS protection |
-| **CLI flags** | `--init`, `--publish-all`, `--daemon` | `--publish-all`, `--publish-new`, `--force`, `--verbose`, `--help`, `--version` |
+| **CLI flags** | `--init`, `--publish-all`, `--daemon` | `--init`, `--show-conf`, `--publish-all`, `--publish-new`, `--force`, `--verbose`, `--help`, `--version` |
 | **Incremental mode** | Full rebuild every time | `--publish-new` only processes changed files |
 | **Locking** | None | File lock via `flock` |
 | **Dependencies** | ~18 CPAN modules | 10 modules (no Moo, no ForkManager, no Data::GUID, etc.) |
@@ -54,8 +54,9 @@ make test
 
 ## Configuration
 
-The first time you run `burbleboycmd`, it creates `~/.burbleboy.conf` with sensible
-defaults.  The config file uses YAML.  Here is a complete example:
+Run `bin/burbleboycmd --init` to create `~/.burbleboy.conf` with sensible
+defaults and the `~/burbleboy/{source,docroot}` project directories.
+The config file uses YAML.  Here is a complete example:
 
 ```yaml
 base_uri: https://www.example.com/
@@ -66,6 +67,9 @@ source_path: /home/you/Dropbox/burbleboy/source
 publication_path: /home/you/Sites/www
 show_max_posts: 5
 ```
+
+Use `bin/burbleboycmd --show-conf` to display your current configuration
+(from the file or default values).
 
 ### Required keys
 
@@ -162,6 +166,12 @@ Note body with #hashtags and https://autolinked.urls
 ## Usage
 
 ```bash
+# First run — create config and project directories
+bin/burbleboycmd --init
+
+# View current configuration
+bin/burbleboycmd --show-conf
+
 # Publish everything (full rebuild)
 bin/burbleboycmd --publish-all
 
@@ -182,7 +192,8 @@ bin/burbleboycmd --publish-new --verbose
 bin/burbleboycmd --help
 ```
 
-Run every 5–10 minutes to catch newly synced Dropbox files.  This gives
+Run `bin/burbleboycmd --init` first if you have not set up the config yet.
+Then run every 5–10 minutes to catch newly synced Dropbox files.  This gives
 Dropbox enough time to finish syncing before burbleboy reads the source
 directory (running every minute risks catching partially-synced files).
 
@@ -213,7 +224,7 @@ directory (running every minute risks catching partially-synced files).
 1. **Back up your old Burbleboy install and published site**.
 2. Clone this repo and install dependencies.
 3. Your existing `~/.burbleboy.conf` should work as-is.  If you want a fresh
-   start, delete it and let burbleboycmd create a default.
+   start, run `bin/burbleboycmd --init`.
 4. Your `.md` post files and `.txt` note files are compatible.  No changes
    needed.
 5. The built-in Template Toolkit templates are the same Bootstrap 5 layout.
@@ -221,9 +232,6 @@ directory (running every minute risks catching partially-synced files).
 6. Run `bin/burbleboycmd --publish-all --verbose` to rebuild your entire site.
 7. Set up a cron job for incremental publishing:
    `bin/burbleboycmd --publish-new`.
-
-**Note**: The old `--init` flag and daemon mode are gone.  Config is
-auto-created on first run.  All operations are single-run CLI commands.
 
 ## Author
 
