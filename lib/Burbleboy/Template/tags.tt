@@ -1,0 +1,45 @@
+[%- # Joe Johnston <jjohn@taskboy.com> %]
+[% WRAPPER layout.tt
+      section_title = 'Tags'
+      section_description = 'Articles and notes grouped by tags'
+%]
+<br>
+<h2>Index</h2>
+
+<ul class="nav">
+  [%- FOREACH letter = ['A'..'Z'] %]
+  <li class="nav-item">
+    <a class="nav-link" href="#[% letter %]-tag-list">[% letter %]</a>
+  </li>
+  [%- END %]
+</ul>
+
+<hr>
+
+<ul id="all-tags-list" class="list-unstyled">
+  [% FOREACH letter = ['A'..'Z'] %]
+    <li id="[% letter %]-tag-list">
+      <h3 class="bg-info text-light bg-gradient-primary">[% letter %]</h3>
+      [% IF tag_links.$letter %]
+      <ul class="tags-grouped-by-letter-list list-unstyled">
+      [%- FOREACH tag = tag_links.$letter.keys.sort %]
+        <li>
+          <h4>[% tag %] ([% tag_links.$letter.$tag.size %])</h4>
+          <ul id="tag-[% tag | html %]-list" class="tagged-articles-list">
+          [% FOREACH link = tag_links.$letter.$tag %]
+            <li>
+                <a href="[% link.uri %]">[% link.title | html %]</a>
+            </li>
+          [% END %]
+          </ul>
+        </li>
+      [%- END %]
+      </ul>
+      [%- ELSE %]
+      <p><em>None</em></p>
+      [%- END %]
+    </li>
+  [% END %]
+</ul>
+
+[% END %]

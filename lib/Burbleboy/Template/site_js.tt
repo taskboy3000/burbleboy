@@ -1,0 +1,113 @@
+/* Top-level JS included in all templates */
+function populateFeedList (feed, listNode, emptyMsg) {
+    if (!listNode) {
+        console.warn("Cannot find target node");
+        return;
+    }
+
+    if (feed && feed.items) {
+        for (let item of feed.items) {
+            let li = document.createElement("li");
+            let a = document.createElement("a");
+            a.innerHTML = item.title;
+            a.setAttribute("href", item.url);
+            a.classList.add("reply_stats");
+            li.append(a);
+            listNode.append(li);
+        }
+    } else {
+        listNode.style.display = "none";
+        let p = document.createElement("p");
+        p.style.fontStyle = "italic";
+        p.innerHTML = emptyMsg;
+        listNode.parentNode.append(p);
+    }
+}
+
+function populateRecentPosts (feed) {
+    let list = document.getElementById('recent-posts-list');
+    if (!list) {
+        console.warn("Cannot find 'recent-posts-list'");
+        return;
+    }
+    populateFeedList(feed, list, "No posts yet");
+}
+
+function populateLatestNotes (feed) {
+    let list = document.getElementById('latest-notes-list');
+    if (!list) {
+        console.warn("Cannot find 'latest-notes-list'");
+        return;
+    }
+    populateFeedList(feed, list, "No notes yet");
+}
+
+async function getRecentPosts () {
+    let feedURL = '[% jsonFeed.uri.as_string %]';
+    let response = await fetch(feedURL);
+    let json;
+    if (response.ok) {
+        json = await response.json();
+    }
+    populateRecentPosts(json);
+}
+
+async function getRecentNotes () {
+    let feedURL = '[% notesJSONFeed.uri.as_string %]';
+    let response = await fetch(feedURL);
+    let json;
+    if (response.ok) {
+        json = await response.json();
+    }
+    populateLatestNotes(json);
+}
+
+function initializeWebMentions () {
+    const wm_summaries = document.querySelectorAll('.webmentions .summary');
+    for (let wb_summary of wm_summaries) {
+        let url = wb_summary.getAttribute("data-summary-uri");
+        if (url) {
+            fetch(url).then((response) => {
+                return response.text();
+            }).then((html) => {
+                if (html) {
+                    let a = document.createElement("a");
+                    let d_node = wb_summary.parentNode.querySelector(".display");
+                    a.setAttribute("href", "#");
+                    a.setAttribute("data-bs-toggle", "collapse");
+                    a.setAttribute("data-bs-target", "div.display[data-display-uri='"
+                       + d_node.getAttribute('data-display-uri')
+                       + "']");
+                    a.innerHTML=html;
+                    wb_summary.innerHTML = "";
+                    wb_summary.append(a);
+                } else {
+                    wb_summary.classList.add("d-none");
+                    wb_summary.parentNode.querySelector(".display").classList.add("d-none");
+                    wb_summary.parentNode.querySelector(".display").classList.add("d-none");
+                }
+            });
+        }
+    }
+    const wm_displays = document.querySelectorAll('.webmentions .display');
+    for (let wb_display of wm_displays) {
+        let url = wb_display.getAttribute("data-display-uri");
+        if (url) {
+            fetch(url).then((response) => {
+                return response.text();
+            }).then((html) => {
+                wb_display.innerHTML = html;
+            });
+        }
+
+    }
+}
+
+function initialize () {
+    getRecentPosts();
+    getRecentNotes();
+    initializeWebMentions();
+    hljs.initHighlighting();
+}
+
+window.addEventListener('load', initialize, false);

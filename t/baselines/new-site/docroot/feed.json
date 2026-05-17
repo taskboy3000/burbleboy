@@ -1,0 +1,54 @@
+{
+   "author" : {
+      "name" : "Sam Handwich",
+      "url" : "mailto:s.handwich@localhost"
+   },
+   "feed_url" : "http://localhost/feed.json",
+   "home_page_url" : "http://localhost/",
+   "items" : [
+      {
+         "content_html" : "<p>This is a perfectly good and typical source file.</p>\n",
+         "date_published" : "2020-07-14T09:05:34-04:00",
+         "id" : "http://localhost/2020y07m14d_09h05m34s-two-tags.html",
+         "title" : "Two tags",
+         "url" : "http://localhost/2020y07m14d_09h05m34s-two-tags.html"
+      },
+      {
+         "content_html" : "<p>This is a perfectly good and typical source file.</p>\n",
+         "date_published" : "2020-07-14T09:05:33-04:00",
+         "id" : "http://localhost/2020y07m14d_09h05m33s-one-tag.html",
+         "title" : "One tag",
+         "url" : "http://localhost/2020y07m14d_09h05m33s-one-tag.html"
+      },
+      {
+         "content_html" : "<p>This is a test to see if we might accept tags with # but silently drop them from the tag list.</p>\n\n<p>When we reserialize this source file, the octothorpes will be removed.</p>\n\n<p>I’m OK with this (re: iOS Bear app).</p>\n",
+         "date_published" : "2020-07-14T09:05:32-04:00",
+         "id" : "http://localhost/2020y07m14d_09h05m32s-has-hashtags.html",
+         "title" : "Has hashtags",
+         "url" : "http://localhost/2020y07m14d_09h05m32s-has-hashtags.html"
+      },
+      {
+         "content_html" : "<p>Uh oh, this file doesn’t have a title!</p>\n",
+         "date_published" : "2020-07-14T09:05:31-04:00",
+         "id" : "http://localhost/2020y07m14d_09h05m31s-no-title.html",
+         "title" : "no-title",
+         "url" : "http://localhost/2020y07m14d_09h05m31s-no-title.html"
+      },
+      {
+         "content_html" : "<p>This file sets up some attributes that should cause some social media tags to get created in the resulting HTML, under the right circumstances.</p>\n",
+         "date_published" : "2020-07-14T09:05:30-04:00",
+         "id" : "http://localhost/2020y07m14d_09h05m30s-metatags.html",
+         "title" : "Metatags",
+         "url" : "http://localhost/2020y07m14d_09h05m30s-metatags.html"
+      },
+      {
+         "content_html" : "<p><a href=\"https://en.wikipedia.org/wiki/Coconut#/media/File:Cocos_nucifera_-_K%C3%B6hler%E2%80%93s_Medizinal-Pflanzen-187.jpg\">This file</a> sets up some attributes that should cause some social media tags to get created in the resulting HTML, under the right circumstances.</p>\n\n<p>Furthermore, it refers to a post-specific image. But it doesn’t specify a description! It does have a hyperlink in the first paragraph, though.</p>\n",
+         "date_published" : "2020-07-14T09:05:29-04:00",
+         "id" : "http://localhost/2020y07m14d_09h05m29s-metatags-with-image.html",
+         "title" : "Metatags with image",
+         "url" : "http://localhost/2020y07m14d_09h05m29s-metatags-with-image.html"
+      }
+   ],
+   "title" : "Another Burbleboy Blog",
+   "version" : "https://jsonfeed.org/version/1"
+}

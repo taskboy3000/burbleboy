@@ -1,0 +1,10 @@
+requires 'DateTime';
+requires 'DateTime::Format::W3CDTF';
+requires 'Digest::SHA';
+requires 'JSON';
+requires 'Modern::Perl';
+requires 'Path::Class';
+requires 'Template';
+requires 'Test2::V0';
+requires 'Text::MultiMarkdown';
+requires 'YAML::XS';

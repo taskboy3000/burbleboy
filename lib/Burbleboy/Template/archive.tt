@@ -1,0 +1,25 @@
+[% WRAPPER layout.tt
+     section_title = 'Archives'
+     section_description = 'Articles sorted in reverse chronological order'
+%]
+<div class="archived-articles-list">
+[% current_month = 0 %]
+[% FOREACH post IN posts.reverse %]
+    [% post_month = post.year _ post.month %]
+    [% IF !current_month || current_month != post_month %]
+        [% IF current_month %]
+        </ul>
+        [% END %]
+        <h2 class="bg-info text-light">[% post.month_name %] [% post.year %]</h2>
+        <ul id="posts-by-month-[% post.year %]-[% post.month %]">
+    [% END %]
+            <li><a href="[% post.uri %]">[% post.title %]</a></li>
+    [% current_month = post_month %]
+[% END %]
+
+[% IF current_month %]
+    </ul>
+[% END %]
+</div>
+
+[% END %]

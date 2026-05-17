@@ -1,0 +1,121 @@
+[%- # Joe Johnston <jjohn@taskboy.com> %]
+# This is a configuration file for a single Burbleboy-based blog!
+#
+# Update the values below to best suit your blogging needs. After that,
+# you can then either copy (or symlink) this file to .burbleboy in your home
+# directory for use as a system-wide default, or you can specify this
+# file when running the `burbleboy` or `burbleboywatcher` programs through their
+# --config command-line option. (See these programs' respective man
+# pages for more details.)
+
+#####################
+# Required setup
+#####################
+# Values for these fields are all required for Burbleboy to work properly.
+
+# base_uri: The URI base that this blog will use when generating various
+#           self-pointing links. Generally, this should be the same as your
+#           blog's "front page" URL.
+base_uri:     [% config.base_uri %]
+
+# path: The path on your filesystem where Burbleboy will find this blog's
+# source, docroot, and other important sub-directories. (If you don't
+# want to keep all these under a single master directory, see
+# "Split-location setup", below.)
+path:         [% config.path %]
+
+# title: This blog's title.
+title:        [% config.title %]
+
+# description: An optional blurb that will appear on the recent posts view
+site_description:  [% config.site_description %]
+
+latest_articles_description: 
+
+notes_description: 
+
+tags_description: 
+
+archive_description: 
+
+# author_name: The name of this blog's author.
+author_name:  [% config.author_name %]
+
+# author_email: The email address of this blog's author.
+author_email: [% config.author_email %]
+
+# Set the background image URL for the "jumbotron" header that
+# the section title of appears in
+jumbotron_image: [% config.jumbotron_image %]
+
+# This is a blob of markdown text that will appear 
+# in the sidebar under "About this site"
+# Here is a URL to help you with block scalars in YAML
+#   https://yaml-multiline.info/
+site_description: [% config.site_description %]
+
+######################
+# Social-media setup
+######################
+# Fill in these values in order to activate Twitter Card support for your
+# Burbleboy-based blog.
+
+# twitter_id: The Twitter username to associate with this blog.
+#             If you define this, then Burbleboy will try to generate Twitter Card
+#             metatags on each post's webpage.
+#             (Don't include the leading '\@', please.)
+twitter_id: [% config.has_twitter_id ? config.twitter_id : "" %]
+
+# image: Your blog's "logo", used as a fallback image for posts that do not
+#        define an image themselves.
+#        Optional, but if you don't define this, then posts without their
+#        own image attributes won't get any social-media metatags.
+#
+#        e.g. http://blog.example.com/images/blog_logo.png
+image: [% config.has_image ? config.image : "" %]
+
+# image_alt: A text description of your image, equivalent to the "alt" attribute
+#            in HTML <img> tags, and useful for visually impaired visitors to
+#            your blog.
+#            Optional, but if you define an image, you should define this too.
+image_alt: [% config.image_alt %]
+
+# This is the number of posts to show on the Latets Posts page and 
+# the number of items in the RSS and JSON feeds
+show_max_posts: [% config.show_max_posts %]
+
+# Interested in indieweb's Web Mentions? https://www.w3.org/TR/webmention/
+# Setup a web mention listener like whim (https://github.com/jmacdotorg/whim)
+# Then add the URL below.
+webmention_endpoint: [% config.webmention_endpoint %]
+
+######################
+# Split-location setup
+######################
+# If you don't want to keep all of Burbleboy's required directories under a single
+# master directory (configured withe the "path" directive, as seen above), then
+# you can define the directories with these separate directives instead:
+#
+source_path:            [% config.source_directory %]
+source_notes_path:      [% config.source_notes_directory %]
+publication_path:       [% config.publication_directory %]
+notes_publication_path: [% config.notes_publication_directory %]
+template_path:          [% config.template_directory %]
+database_path:          [% config.database_directory %]
+run_path:               [% config.run_directory %]
+log_path:               [% config.log_directory %]
+
+# Custom navigation items can be added to the top-level 
+# nav bar by adding a title and URI, as is shown below:
+#
+# custom_nav_items:
+#       - title: Now
+#         uri: http://blog.com/now.html
+#       - title: About
+#         uri: http://blog.com/about.html
+# 
+custom_nav_items:
+[%- FOREACH custom_nav_item = config.custom_nav_items %]
+    - title: [%- custom_nav_item.title %]
+      uri: [%- custom_nav_item.uri %]
+[%- END %]

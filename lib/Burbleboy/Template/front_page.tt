@@ -1,0 +1,15 @@
+[% WRAPPER layout.tt section_title = "Latest Articles" %]
+
+[% IF posts.size > 0 %]
+    [% FOREACH post = posts %]
+    <ul class="latest-posts list-unstyled">
+        <li>
+            [% INCLUDE "_post.tt" title_hightlight = 1 include_reading_time = 1 %]
+        </li>
+    </ul>
+    [% END %]
+[% ELSE %]
+    <em>No posts yet.  Check back later.</em>
+[% END %]
+
+[% END %]

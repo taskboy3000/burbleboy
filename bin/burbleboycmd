@@ -1,0 +1,283 @@
+#!/usr/bin/env perl
+use Modern::Perl '2018';
+
+use FindBin;
+use lib "$FindBin::Bin/../lib";
+
+use Getopt::Long;
+use Fcntl ':flock';
+use File::Basename qw(basename);
+use Burbleboy::Config qw(read_config config_defaults home_dir);
+use Burbleboy::Publish qw(:all);
+
+use Template;
+use File::Spec;
+
+our $VERSION = '1.0';
+
+Main();
+exit;
+
+sub Main {
+    my %opts;
+    GetOptions(
+        'publish-all'        => \$opts{ publish_all },
+        'publish-new'        => \$opts{ publish_new },
+        'publish-only-posts' => \$opts{ publish_only_posts },
+        'publish-only-notes' => \$opts{ publish_only_notes },
+        'force'              => \$opts{ force },
+        'v|verbose'          => \$opts{ verbose },
+        'h|help'             => \$opts{ help },
+        'version'            => \$opts{ version },
+    ) or do { warn "Try --help for usage.\n"; exit 1; };
+
+    if ( $opts{ help } )   { print usage_text();    exit 0; }
+    if ( $opts{ version } ) { print version_text();  exit 0; }
+
+    my $config_file = home_dir() . '/.burbleboy.conf';
+    _ensure_config( $config_file, $opts{ verbose } );
+    my $config = read_config( $config_file );
+
+    my $lock_fh = get_lock( $config );
+    my $tt = _setup_template();
+
+    my $source_dir = $config->{ source_directory } || $config->{ path };
+    die "Source directory not found: $source_dir" unless -d $source_dir;
+
+    my $pub_dir = $config->{ publication_directory }
+        || $config->{ publication_path }
+        || '.';
+
+    my $do_posts;
+    my $do_notes;
+
+    if ( $opts{ publish_new } ) {
+        $do_posts = !$opts{ publish_only_notes };
+        $do_notes = !$opts{ publish_only_posts };
+    } else {
+        $do_posts = $opts{ publish_all } || $opts{ publish_only_posts }
+            || ( !$opts{ publish_only_posts } && !$opts{ publish_only_notes } );
+        $do_notes = $opts{ publish_all } || $opts{ publish_only_notes };
+    }
+
+    my $posts = [];
+    my $notes = [];
+
+    if ( $do_posts ) {
+        if ( $opts{ publish_new } ) {
+            $posts = incremental_publish_posts( $config, $tt, $source_dir,
+                $opts{ force }, $opts{ verbose } );
+        } else {
+            $posts = _publish_posts( $config, $tt, $source_dir,
+                $opts{ force }, $opts{ verbose } );
+        }
+    }
+
+    if ( $do_notes ) {
+        my $notes_dir = $config->{ source_notes_directory }
+            || "$source_dir/notes";
+        if ( $opts{ publish_new } ) {
+            $notes = incremental_publish_notes( $config, $tt, $notes_dir,
+                $opts{ force }, $opts{ verbose } );
+        } else {
+            $notes = _publish_notes( $config, $tt, $source_dir,
+                $opts{ force }, $opts{ verbose } );
+        }
+    }
+
+    if ( $do_posts ) {
+        if ( $opts{ publish_new } ) {
+            if ( @$posts ) {
+                my $all_posts = read_all_meta( $config, 'post' );
+                if ( @$all_posts ) {
+                    fill_body_for_top_n( $all_posts, $pub_dir,
+                        $config->{ show_max_posts } || 5 );
+                    publish_front_page( $config, $tt, $all_posts );
+
+                    publish_archive_page( $config, $tt, $all_posts );
+                    publish_tags_index( $config, $tt, $all_posts, read_all_meta($config, 'note') );
+
+                    fill_body_for_posts( $all_posts, $pub_dir );
+                    publish_atom_feed( $config, $tt, $all_posts );
+                    publish_json_feed( $config, $tt, $all_posts );
+                } else {
+                    warn "No meta files found. Run --publish-all first.\n"
+                        if $opts{ verbose };
+                    publish_front_page( $config, $tt, $posts );
+                    publish_archive_page( $config, $tt, $posts );
+                    publish_tags_index( $config, $tt, $posts, $notes );
+                    publish_atom_feed( $config, $tt, $posts );
+                    publish_json_feed( $config, $tt, $posts );
+                }
+            } else {
+                publish_tags_index( $config, $tt, [], $notes );
+            }
+        } else {
+            publish_front_page( $config, $tt, $posts );
+            publish_archive_page( $config, $tt, $posts );
+            publish_tags_index( $config, $tt, $posts, $notes );
+            publish_atom_feed( $config, $tt, $posts );
+            publish_json_feed( $config, $tt, $posts );
+        }
+    }
+
+    if ( $do_notes ) {
+        if ( $opts{ publish_new } ) {
+            if ( @$notes ) {
+                my $all_notes = read_all_meta( $config, 'note' );
+                if ( @$all_notes ) {
+                    fill_body_for_posts( $all_notes, $pub_dir );
+                    publish_notes_roll( $config, $tt, $all_notes );
+                    publish_notes_json( $config, $tt, $all_notes );
+                } else {
+                    warn "No note meta files found. Run --publish-all first.\n"
+                        if $opts{ verbose };
+                    publish_notes_roll( $config, $tt, $notes );
+                    publish_notes_json( $config, $tt, $notes );
+                }
+            } elsif ( $opts{ verbose } ) {
+                say "No new notes; skipping roll regeneration.";
+            }
+        } else {
+            publish_notes_roll( $config, $tt, $notes );
+            publish_notes_json( $config, $tt, $notes );
+        }
+    }
+
+    free_lock( $lock_fh );
+    exit 0;
+}
+
+sub usage_text {
+    return <<'EOT';
+burbleboycmd - manage burbleboy sites
+
+USAGE:
+
+    burbleboycmd [OPTIONS] [COMMAND]
+
+COMMAND:
+
+--publish-all            Republish all known source files
+--publish-new            Incremental publish (only changed files)
+--publish-only-posts     Publish only new posts; ignore new notes
+--publish-only-notes     Publish only new notes; ignore new posts
+
+OPTIONS:
+
+--force                  Force publication even if source unchanged
+--v|verbose              Enable verbose messages
+--version                Print version number
+--h|help                 This screen
+
+EOT
+}
+
+sub version_text {
+    return "burbleboy/taskboy3000 v$VERSION\n";
+}
+
+sub _setup_template {
+    return Template->new(
+        {   INCLUDE_PATH => "$FindBin::Bin/../lib/Burbleboy/Template",
+            ABSOLUTE     => 1,
+            RELATIVE     => 1,
+        }
+    );
+}
+
+sub _publish_posts {
+    my ( $config, $tt, $source_dir, $force, $verbose ) = @_;
+
+    opendir my $dh, $source_dir or die "Cannot read $source_dir: $!";
+    my @files = grep { /\.(?:md|markdown)$/i && -f "$source_dir/$_" }
+        readdir( $dh );
+    closedir $dh;
+
+    my @posts;
+    for my $file ( @files ) {
+        next if $file =~ /^\./;
+        my $source_file = "$source_dir/$file";
+        my $post = eval { publish_post( $source_file, $config, $tt ) };
+        if ( $@ ) {
+            warn "Error publishing $file: $@" if $verbose;
+            next;
+        }
+        push @posts, $post;
+        say "Published: $file" if $verbose;
+    }
+
+    return \@posts;
+}
+
+sub _publish_notes {
+    my ( $config, $tt, $source_dir, $force, $verbose ) = @_;
+
+    my $notes_dir = $config->{ source_notes_directory }
+        || "$source_dir/notes";
+    return [] unless -d $notes_dir;
+
+    opendir my $dh, $notes_dir or die "Cannot read $notes_dir: $!";
+    my @files = grep { /\.(?:md|markdown)$/i && -f "$notes_dir/$_" }
+        readdir( $dh );
+    closedir $dh;
+
+    my @notes;
+    for my $file ( @files ) {
+        next if $file =~ /^\./;
+        my $source_file = "$notes_dir/$file";
+        my $note = eval { publish_note( $source_file, $config, $tt ) };
+        if ( $@ ) {
+            warn "Error publishing note $file: $@" if $verbose;
+            next;
+        }
+        push @notes, $note;
+        say "Published note: $file" if $verbose;
+    }
+
+    return \@notes;
+}
+
+sub _ensure_config {
+    my ( $config_file, $verbose ) = @_;
+
+    return if -f $config_file;
+
+    require YAML::XS;
+    require File::Path;
+    my $defaults = Burbleboy::Config::config_defaults();
+    my $home     = home_dir();
+    my $config   = {
+        base_uri         => $defaults->{ base_uri },
+        title            => $defaults->{ title },
+        author_name      => $defaults->{ author_name },
+        author_email     => $defaults->{ author_email },
+        source_path      => "$home/burbleboy/source",
+        publication_path => "$home/burbleboy/docroot",
+        show_max_posts   => $defaults->{ show_max_posts },
+    };
+
+    File::Path::mkpath( $config->{ source_path } );
+    File::Path::mkpath( $config->{ publication_path } );
+    YAML::XS::DumpFile( $config_file, $config );
+    say "Created $config_file with defaults." if $verbose;
+}
+
+sub get_lock {
+    my ($config) = @_;
+    my $pub_dir = $config->{ publication_directory }
+        || $config->{ publication_path }
+        || home_dir()
+        || '/tmp';
+    my $lock_file = "$pub_dir/.burbleboycmd.lock";
+    open my $fh, '>', $lock_file or die "Cannot create lock file: $!";
+    flock( $fh, LOCK_EX | LOCK_NB )
+        or die "Cannot obtain lock. Try back later.\n";
+    return $fh;
+}
+
+sub free_lock {
+    my ( $fh ) = @_;
+    flock( $fh, LOCK_UN );
+    close( $fh );
+}

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Another Burbleboy Blog]]></title>
+  <link href="http://localhost//atom.xml" rel="self" />
+  <link href="http://localhost/" />
+  <updated></updated>
+  <id>http://localhost/</id>
+  <author>
+    <name><![CDATA[Sam Handwich]]></name>
+    <email><![CDATA[s.handwich@localhost]]></email>
+  </author>
+
+
+  <entry>
+    <title type="html"><![CDATA[Two tags]]></title>
+    <link href="http://localhost/2020y07m14d_09h05m34s-two-tags.html"/>
+    <published>2020-07-14T09:05:34-04:00</published>
+    <updated>2020-07-14T09:05:41-04:00</updated>
+    <id>http://localhost/2020y07m14d_09h05m34s-two-tags.html</id>
+    <content type="html"><![CDATA[<p>This is a perfectly good and typical source file.</p>
+]]></content>
+  </entry>
+
+  <entry>
+    <title type="html"><![CDATA[One tag]]></title>
+    <link href="http://localhost/2020y07m14d_09h05m33s-one-tag.html"/>
+    <published>2020-07-14T09:05:33-04:00</published>
+    <updated>2020-07-14T09:05:41-04:00</updated>
+    <id>http://localhost/2020y07m14d_09h05m33s-one-tag.html</id>
+    <content type="html"><![CDATA[<p>This is a perfectly good and typical source file.</p>
+]]></content>
+  </entry>
+
+  <entry>
+    <title type="html"><![CDATA[Has hashtags]]></title>
+    <link href="http://localhost/2020y07m14d_09h05m32s-has-hashtags.html"/>
+    <published>2020-07-14T09:05:32-04:00</published>
+    <updated>2020-07-14T09:05:41-04:00</updated>
+    <id>http://localhost/2020y07m14d_09h05m32s-has-hashtags.html</id>
+    <content type="html"><![CDATA[<p>This is a test to see if we might accept tags with # but silently drop them from the tag list.</p>
+
+<p>When we reserialize this source file, the octothorpes will be removed.</p>
+
+<p>I’m OK with this (re: iOS Bear app).</p>
+]]></content>
+  </entry>
+
+  <entry>
+    <title type="html"><![CDATA[no-title]]></title>
+    <link href="http://localhost/2020y07m14d_09h05m31s-no-title.html"/>
+    <published>2020-07-14T09:05:31-04:00</published>
+    <updated>2020-07-14T09:05:41-04:00</updated>
+    <id>http://localhost/2020y07m14d_09h05m31s-no-title.html</id>
+    <content type="html"><![CDATA[<p>Uh oh, this file doesn’t have a title!</p>
+]]></content>
+  </entry>
+
+  <entry>
+    <title type="html"><![CDATA[Metatags]]></title>
+    <link href="http://localhost/2020y07m14d_09h05m30s-metatags.html"/>
+    <published>2020-07-14T09:05:30-04:00</published>
+    <updated>2020-07-14T09:05:40-04:00</updated>
+    <id>http://localhost/2020y07m14d_09h05m30s-metatags.html</id>
+    <content type="html"><![CDATA[<p>This file sets up some attributes that should cause some social media tags to get created in the resulting HTML, under the right circumstances.</p>
+]]></content>
+  </entry>
+
+  <entry>
+    <title type="html"><![CDATA[Metatags with image]]></title>
+    <link href="http://localhost/2020y07m14d_09h05m29s-metatags-with-image.html"/>
+    <published>2020-07-14T09:05:29-04:00</published>
+    <updated>2020-07-14T09:05:40-04:00</updated>
+    <id>http://localhost/2020y07m14d_09h05m29s-metatags-with-image.html</id>
+    <content type="html"><![CDATA[<p><a href="https://en.wikipedia.org/wiki/Coconut#/media/File:Cocos_nucifera_-_K%C3%B6hler%E2%80%93s_Medizinal-Pflanzen-187.jpg">This file</a> sets up some attributes that should cause some social media tags to get created in the resulting HTML, under the right circumstances.</p>
+
+<p>Furthermore, it refers to a post-specific image. But it doesn’t specify a description! It does have a hyperlink in the first paragraph, though.</p>
+]]></content>
+  </entry>
+
+
+</feed>

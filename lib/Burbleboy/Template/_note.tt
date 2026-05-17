@@ -1,0 +1,36 @@
+[% USE format;
+     zero_padded = format("%02d");
+%]
+<div class="h-entry note">
+    <div class="masthead text-gray text-shadow bg-primary pt-4">
+        <div class="row">
+           <div class="col-sm-7">
+                [% note.title %]
+           </div>
+           <div class="col-sm-4 text-right">
+                <time class="dt-published text-small" datetime="[% note.utc_date.ymd %]T[% note.utc_date.hms %]+00:00">
+                    Published on [% note.date_as_mysql %] UTC
+                </time>
+           </div>
+           <div class="col-sm-1 text-right">
+                <a class="u-url u-uid text-light" href="[% note.uri %]" title="Permalink for bookmarking and webmentions">
+                    &Lscr;
+                </a>
+           </div>
+        </div>
+
+
+    </div>
+    <!-- POST_BODY_START -->
+    <div class="e-content">[% note.body %]</div>
+    <!-- POST_BODY_END -->
+
+    [% IF note.webmentions_summary_uri %]
+    <div class="webmentions">
+        <div class="summary" data-summary-uri="[% note.webmentions_summary_uri %]"><small>loading...</small></div>
+        <div class="display collapse" data-display-uri="[% note.webmentions_display_uri %]"><small>loading...</small></div>
+    </div>
+    [% END %]
+    
+</div>
+

@@ -1,0 +1,20 @@
+[% WRAPPER 'layout.tt'
+      section_title = "Notes Roll"
+      section_description = 'Indieweb-style Microposts '
+%]
+
+[% IF notesDescription %]
+    <div class="mt-4">[% notesDescription %]</div>
+[% END %]
+
+<div class="notes-roll [% notesDescription ? "mt-4" : "" %]">
+[% IF notes.size > 0 %]
+    [% FOREACH note = notes %]  
+        [% INCLUDE "_note.tt" note = note %]
+    [% END %]
+[% ELSE %]
+    <em>No notes posted yet.  Check back later.</em>
+[% END %]
+</div>
+
+[% END %]

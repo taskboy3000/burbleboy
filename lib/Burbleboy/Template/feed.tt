@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[[% config.title %]]]></title>
+  <link href="[% config.base_uri %]/atom.xml" rel="self" />
+  <link href="[% config.base_uri %]" />
+  <updated>[% timestamp %]</updated>
+  <id>[% config.base_uri %]</id>
+  <author>
+    <name><![CDATA[[% config.author_name %]]]></name>
+    <email><![CDATA[[% config.author_email %]]]></email>
+  </author>
+
+[% FOR post IN posts %]
+  <entry>
+    <title type="html"><![CDATA[[% post.title %]]]></title>
+    <link href="[% post.uri %]"/>
+    <published>[% post.published_timestamp %]</published>
+    <updated>[% post.updated_timestamp %]</updated>
+    <id>[% post.uri %]</id>
+    <content type="html"><![CDATA[[% post.body %]]]></content>
+  </entry>
+[% END %]
+
+</feed>
