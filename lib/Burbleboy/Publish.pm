@@ -6,12 +6,15 @@ use File::Basename qw(basename);
 use File::Spec;
 use Burbleboy::Sanitize qw(sanitize_html);
 
+use URI;
+
 our @EXPORT_OK = qw(
     publish_post publish_note needs_update
     publish_front_page publish_archive_page
     publish_tags_index
     publish_atom_feed publish_json_feed
     publish_notes_roll publish_notes_json
+    publish_site_css publish_site_js
     incremental_publish_posts incremental_publish_notes
     try_publish write_meta read_all_meta
     extract_body_from_html fill_body_for_posts fill_body_for_top_n
@@ -29,6 +32,37 @@ sub needs_update {
     return $source_stat[ 9 ] > $output_stat[ 9 ];
 }
 
+sub _build_template_stash {
+    my ( $config, $this_uri ) = @_;
+
+    my $base_uri = $config->{ base_uri } || 'http://localhost/';
+    $base_uri =~ s{/$}{};
+
+    my $site_desc = $config->{ site_description } || '';
+    unless ($site_desc) {
+        my $author = $config->{ author_name } || 'Unknown Author';
+        my $email  = $config->{ author_email } || '';
+        $site_desc = "This is a blog by $author";
+        $site_desc .= " (<a href=\"mailto:$email\">$email</a>)" if $email;
+        $site_desc .= '.';
+    }
+
+    return {
+        frontPage       => { uri => URI->new_abs( 'blog.html',            "$base_uri/" ) },
+        notesRoll       => { uri => URI->new_abs( 'notes_roll.html',      "$base_uri/" ) },
+        archive         => { uri => URI->new_abs( 'archive.html',          "$base_uri/" ) },
+        tagsIndex       => { uri => URI->new_abs( 'tags.html',             "$base_uri/" ) },
+        rssFeed         => { uri => URI->new_abs( 'atom.xml',              "$base_uri/" ) },
+        jsonFeed        => { uri => URI->new_abs( 'feed.json',             "$base_uri/" ) },
+        notesJSONFeed   => { uri => URI->new_abs( 'recent_notes.json',     "$base_uri/" ) },
+        siteCSS         => { uri => URI->new_abs( 'css/site.css',          "$base_uri/" ) },
+        siteJS          => { uri => URI->new_abs( 'js/site.js',            "$base_uri/" ) },
+        siteDescription => $site_desc,
+        w3validatorURI  => URI->new( 'https://validator.w3.org/nu/' ),
+        thisURI         => $this_uri || URI->new( "$base_uri/" ),
+    };
+}
+
 sub publish_post {
     my ( $source_file, $config, $tt ) = @_;
 
@@ -43,8 +77,10 @@ sub publish_post {
     write_meta( $post, $config, 'post' );
 
     my $output;
+    my $stash = _build_template_stash( $config, $post->{ uri } );
     $tt->process( 'single_post.tt',
-        { post => $post, config => $config }, \$output )
+        { %$stash, post => $post, config => $config,
+          activeSection => 'blog' }, \$output )
         or die $tt->error();
 
     my $pub_file = $post->{ publication_file };
@@ -68,10 +104,15 @@ sub publish_note {
     write_meta( $note, $config, 'note' );
 
     my $output;
-    $tt->process( 'note.tt', { note => $note, config => $config }, \$output )
+    my $stash = _build_template_stash( $config, $note->{ uri } );
+    $tt->process( 'note.tt',
+        { %$stash, note => $note, config => $config,
+          activeSection => 'notes_roll' }, \$output )
         or die $tt->error();
 
     my $pub_file = $note->{ publication_file };
+    my $pub_dir = File::Basename::dirname( $pub_file );
+    mkdir $pub_dir unless -d $pub_dir;
     open my $fh, '>:utf8', $pub_file or die "Cannot write $pub_file: $!";
     print $fh $output;
     close $fh;
@@ -88,11 +129,14 @@ sub publish_front_page {
     my @shown  = @sorted > $max ? @sorted[ 0 .. $max - 1 ] : @sorted;
 
     my $output;
+    my $stash = _build_template_stash( $config );
     $tt->process(
         'front_page.tt',
-        {   posts         => \@shown,
+        {   %$stash,
+            posts         => \@shown,
             config        => $config,
-            section_title => 'Latest Articles'
+            section_title => 'Latest Articles',
+            activeSection => 'blog',
         },
         \$output
     ) or die $tt->error();
@@ -156,8 +200,10 @@ sub publish_tags_index {
     }
 
     my $output;
+    my $stash = _build_template_stash( $config );
     $tt->process( 'tags.tt',
-        { tag_links => \%tag_links, config => $config }, \$output )
+        { %$stash, tag_links => \%tag_links, config => $config,
+          activeSection => 'tags' }, \$output )
         or die $tt->error();
 
     my $pub_dir =
@@ -182,8 +228,10 @@ sub publish_archive_page {
         || $config->{ publication_path }
         || '.';
     my $output;
+    my $stash = _build_template_stash( $config );
     $tt->process( 'archive.tt',
-        { posts => \@sorted, config => $config }, \$output )
+        { %$stash, posts => \@sorted, config => $config,
+          activeSection => 'archive' }, \$output )
         or die $tt->error();
 
     open my $fh, '>:utf8', "$pub_dir/archive.html"
@@ -284,16 +332,18 @@ sub publish_notes_roll {
     my @sorted = sort { $b->{ date } <=> $a->{ date } } @$notes;
 
     my $output;
+    my $stash = _build_template_stash( $config );
     $tt->process( 'notes_roll.tt',
-        { notes => \@sorted, config => $config }, \$output )
+        { %$stash, notes => \@sorted, config => $config,
+          activeSection => 'notes_roll' }, \$output )
         or die $tt->error();
 
     my $pub_dir =
            $config->{ publication_directory }
         || $config->{ publication_path }
         || '.';
-    open my $fh, '>:utf8', "$pub_dir/notes.html"
-        or die "Cannot write notes.html: $!";
+    open my $fh, '>:utf8', "$pub_dir/notes_roll.html"
+        or die "Cannot write notes_roll.html: $!";
     print $fh $output;
     close $fh;
     return 1;
@@ -311,10 +361,13 @@ sub publish_notes_json {
 
     my @items;
     for my $note ( @shown ) {
+        my $title = $note->{ title }
+            || _note_fallback_title( $note );
         push @items,
             {
             id             => $note->{ uri },
             url            => $note->{ uri },
+            title          => $title,
             content_html   => $note->{ body_html },
             date_published => $note->{ date },
             };
@@ -338,6 +391,51 @@ sub publish_notes_json {
     open my $fh, '>', "$pub_dir/recent_notes.json"
         or die "Cannot write recent_notes.json: $!";
     print $fh $feed;
+    close $fh;
+    return 1;
+}
+
+sub publish_site_css {
+    my ( $config, $tt ) = @_;
+
+    my $pub_dir =
+           $config->{ publication_directory }
+        || $config->{ publication_path }
+        || '.';
+    my $css_dir = "$pub_dir/css";
+    mkdir $css_dir unless -d $css_dir;
+
+    my $output;
+    $tt->process( 'site_css.tt',
+        { config => $config }, \$output )
+        or die $tt->error();
+
+    open my $fh, '>:utf8', "$css_dir/site.css"
+        or die "Cannot write site.css: $!";
+    print $fh $output;
+    close $fh;
+    return 1;
+}
+
+sub publish_site_js {
+    my ( $config, $tt ) = @_;
+
+    my $pub_dir =
+           $config->{ publication_directory }
+        || $config->{ publication_path }
+        || '.';
+    my $js_dir = "$pub_dir/js";
+    mkdir $js_dir unless -d $js_dir;
+
+    my $stash = _build_template_stash( $config );
+    my $output;
+    $tt->process( 'site_js.tt',
+        { %$stash, config => $config }, \$output )
+        or die $tt->error();
+
+    open my $fh, '>:utf8', "$js_dir/site.js"
+        or die "Cannot write site.js: $!";
+    print $fh $output;
     close $fh;
     return 1;
 }
@@ -391,7 +489,7 @@ sub incremental_publish_notes {
 
     opendir my $dh, $notes_dir or die "Cannot read $notes_dir: $!";
     my @files =
-        grep { /\.(?:md|markdown)$/i && -f "$notes_dir/$_" } readdir( $dh );
+        grep { /\.(?:txt|md|markdown)$/i && -f "$notes_dir/$_" } readdir( $dh );
     closedir $dh;
 
     my $pub_dir =
@@ -525,16 +623,19 @@ sub read_all_meta {
     my $meta_dir = "$pub_dir/_burbleboy";
     return [] unless -d $meta_dir;
 
-    opendir my $dh, $meta_dir or return [];
-    my @files = grep { /\.meta\.json$/ && -f "$meta_dir/$_" } readdir( $dh );
-    closedir $dh;
+    require File::Find;
+    my @files;
+    File::Find::find( sub {
+        return unless /\.meta\.json$/ && -f $_;
+        push @files, $File::Find::name;
+    }, $meta_dir );
 
     require JSON;
     my $base_uri = $config->{ base_uri } || 'http://localhost/';
 
     my @results;
     for my $file ( @files ) {
-        my $meta = eval { JSON::decode_json( _slurp( "$meta_dir/$file" ) ) };
+        my $meta = eval { JSON::decode_json( _slurp( $file ) ) };
         if ( $@ || !$meta ) {
             warn "Skipping corrupt meta file: $file\n";
             next;
@@ -594,7 +695,6 @@ sub write_meta {
         || $config->{ publication_path }
         || '.';
     my $meta_dir = "$pub_dir/_burbleboy";
-    mkdir $meta_dir unless -d $meta_dir;
 
     my $filename;
     if ( $type eq 'post' ) {
@@ -629,6 +729,7 @@ sub write_meta {
 
     my $tmp   = "$meta_dir/$filename.meta.json.tmp";
     my $final = "$meta_dir/$filename.meta.json";
+    File::Path::mkpath( File::Basename::dirname( $tmp ) );
     open my $fh, '>', $tmp or die "Cannot write $tmp: $!";
     print $fh $json;
     close $fh;

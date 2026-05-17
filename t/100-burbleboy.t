@@ -119,7 +119,7 @@ sub test_publish_all {
     publish_notes_roll( $config, $tt, \@notes );
     publish_notes_json( $config, $tt, \@notes );
 
-    ok -s "$pub/notes.html",        'notes.html created and non-empty';
+    ok -s "$pub/notes_roll.html",        'notes_roll.html created and non-empty';
     ok -s "$pub/recent_notes.json", 'recent_notes.json created and non-empty';
 
     teardown_test_site( $site );

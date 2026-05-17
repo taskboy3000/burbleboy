@@ -91,8 +91,8 @@ sub test_notes_roll_with_notes {
     my $notes = _make_notes( 3 );
     publish_notes_roll( $config, $tt, $notes );
 
-    my $file = "$site->{ publication_dir }/notes.html";
-    ok( -e $file, 'notes.html created' );
+    my $file = "$site->{ publication_dir }/notes_roll.html";
+    ok( -e $file, 'notes_roll.html created' );
 
     open my $fh, '<', $file or die "Cannot read $file: $!";
     my $content = do { local $/; <$fh> };
@@ -121,8 +121,8 @@ sub test_notes_roll_zero_notes {
 
     publish_notes_roll( $config, $tt, [] );
 
-    open my $fh, '<', "$site->{ publication_dir }/notes.html"
-        or die "Cannot read notes.html: $!";
+    open my $fh, '<', "$site->{ publication_dir }/notes_roll.html"
+        or die "Cannot read notes_roll.html: $!";
     my $content = do { local $/; <$fh> };
     close $fh;
 
@@ -147,8 +147,8 @@ sub test_notes_roll_one_note {
 
     publish_notes_roll( $config, $tt, _make_notes( 1 ) );
 
-    open my $fh, '<', "$site->{ publication_dir }/notes.html"
-        or die "Cannot read notes.html: $!";
+    open my $fh, '<', "$site->{ publication_dir }/notes_roll.html"
+        or die "Cannot read notes_roll.html: $!";
     my $content = do { local $/; <$fh> };
     close $fh;
 
@@ -183,6 +183,11 @@ sub test_notes_json_with_notes {
     );
     is( ref $data->{ items },         'ARRAY', 'items is an array' );
     is( scalar @{ $data->{ items } }, 3,       '3 items in notes JSON feed' );
+
+    for my $item ( @{ $data->{ items } } ) {
+        ok( exists $item->{ title },         'item has title field' );
+        ok( length( $item->{ title } ) > 0,  'title is non-empty' );
+    }
 
     teardown_test_site( $site );
 }
@@ -225,6 +230,7 @@ sub test_notes_json_one_note {
     my $data = eval { JSON::decode_json( $content ) };
     is( $@, '', 'notes JSON feed with 1 note is valid JSON' );
     is( scalar @{ $data->{ items } }, 1, '1 item in notes JSON feed' );
+    ok( length( $data->{ items }[0]{ title } ) > 0, 'single note title is non-empty' );
 
     teardown_test_site( $site );
 }
@@ -249,6 +255,8 @@ sub test_notes_json_truncation {
     is( $@, '', 'Truncated notes JSON feed is valid JSON' );
     is( scalar @{ $data->{ items } },
         3, 'notes JSON feed truncated to show_max_posts items' );
+    ok( length( $data->{ items }[0]{ title } ) > 0,
+        'truncated note title is non-empty' );
 
     teardown_test_site( $site );
 }

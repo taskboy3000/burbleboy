@@ -101,13 +101,13 @@ sub parse_note {
         || $config->{ publication_directory }
         || '/tmp';
     $note->{ publication_file } =
-        File::Spec->catfile( $pub_dir, $base . '.html' );
-    $note->{ published_filename } = $base . '.html';
+        File::Spec->catfile( $pub_dir, 'notes', $base . '.html' );
+    $note->{ published_filename } = 'notes/' . $base . '.html';
     $note->{ source_file }        = $source_file;
 
     my $base_uri = $config->{ base_uri } || 'http://localhost/';
     $base_uri =~ s{/$}{};
-    $note->{ uri } = $base_uri . '/notes/' . $note->{ published_filename };
+    $note->{ uri } = $base_uri . '/notes/' . $base . '.html';
 
     $note->{ id } = sha1_hex( $note->{ uri } );
 

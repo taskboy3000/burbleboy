@@ -114,10 +114,14 @@ sub Main {
         push @pages, 'tags.html' if $do_posts || $do_notes;
         push @pages, 'atom.xml' if $do_posts;
         push @pages, 'feed.json' if $do_posts;
-        push @pages, 'notes.html' if $do_notes;
+        push @pages, 'notes_roll.html' if $do_notes;
         push @pages, 'recent_notes.json' if $do_notes;
+        push @pages, 'css/site.css' if $do_posts || $do_notes;
+        push @pages, 'js/site.js' if $do_posts || $do_notes;
         say "(dryrun) Would regenerate: " . join( ', ', @pages ) if @pages;
     } else {
+        publish_site_css( $config, $tt );
+        publish_site_js( $config, $tt );
         if ( $do_posts ) {
             if ( $opts{ publish_new } ) {
                 if ( @$posts ) {
@@ -266,7 +270,7 @@ sub _publish_notes {
     return [] unless -d $notes_dir;
 
     opendir my $dh, $notes_dir or die "Cannot read $notes_dir: $!";
-    my @files = grep { /\.(?:md|markdown)$/i && -f "$notes_dir/$_" }
+    my @files = grep { /\.(?:txt|md|markdown)$/i && -f "$notes_dir/$_" }
         readdir( $dh );
     closedir $dh;
 
@@ -345,7 +349,7 @@ sub _show_config {
     $config->{ publication_path } //= "$home/burbleboy/docroot";
 
     my @keys = qw(base_uri title author_name author_email source_path
-        source_notes_path publication_path show_max_posts);
+        source_notes_path publication_path show_max_posts site_description);
     for my $key (@keys) {
         next unless exists $config->{ $key };
         my $val = $config->{ $key };

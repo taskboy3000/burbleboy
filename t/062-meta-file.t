@@ -227,7 +227,7 @@ sub test_meta_note_created {
     publish_note( $source, $config, $tt );
 
     my $meta_file =
-        "$site->{ publication_dir }/_burbleboy/2024y01m15d_12h00m00s-fresh-note.html.meta.json";
+        "$site->{ publication_dir }/_burbleboy/notes/2024y01m15d_12h00m00s-fresh-note.html.meta.json";
     ok( -e $meta_file, 'meta file created for note' );
 
     teardown_test_site( $site );
@@ -255,7 +255,7 @@ sub test_meta_note_fields {
     publish_note( $source, $config, $tt );
 
     my $meta_file =
-        "$site->{ publication_dir }/_burbleboy/2024y01m15d_12h00m00s-fresh-note.html.meta.json";
+        "$site->{ publication_dir }/_burbleboy/notes/2024y01m15d_12h00m00s-fresh-note.html.meta.json";
     open $fh, '<', $meta_file or die "Cannot read $meta_file: $!";
     my $json = do { local $/; <$fh> };
     close $fh;

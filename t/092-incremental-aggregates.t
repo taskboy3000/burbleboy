@@ -422,7 +422,7 @@ sub test_incremental_notes_aggregates {
     fill_body_for_posts( $all_notes, $site->{ publication_dir } );
     publish_notes_roll( $config, $tt, $all_notes );
 
-    open $fh, '<', "$site->{ publication_dir }/notes.html" or die;
+    open $fh, '<', "$site->{ publication_dir }/notes_roll.html" or die;
     my $notes_content = do { local $/; <$fh> };
     close $fh;
 

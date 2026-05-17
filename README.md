@@ -87,6 +87,9 @@ Use `bin/burbleboycmd --show-conf` to display your current configuration
 - `show_max_posts` — how many posts on the front page and in JSON feed
   (default: 5)
 - `webmention_endpoint` — webmention endpoint URL
+- `site_description` — about-text for the sidebar (fallback: "This is a blog
+  by *author_name*")
+- `jumbotron_image` — URL for the front-page jumbotron background image
 - `template_path` — custom Template Toolkit templates directory
   (default: `lib/Burbleboy/Template/` in the burbleboy checkout)
 
@@ -152,8 +155,9 @@ Atom XML, and JSON feeds.
 
 ### Notes (`.txt`)
 
-Notes are short microposts with optional social annotations.  Filename
-convention is free-form (anything `.txt` works).
+Notes are short microposts with optional social annotations.  Unlike posts,
+notes have **no YAML metadata headers** — the entire file is the body text.
+Filename convention is free-form (anything `.txt` works).
 
 ```
 -> https://example.com/original-post    (in-reply-to)
@@ -167,6 +171,19 @@ Note body with #hashtags and https://autolinked.urls
 - Bare URLs are auto-linked
 - `#hashtags` are converted to tag links
 - Newlines become `<br>` in HTML output
+- Timestamp is the file's modification time (no `time:` header)
+
+### Key differences from posts
+
+| Aspect | Posts | Notes |
+|--------|-------|-------|
+| **File extension** | `.md` | `.txt` |
+| **Metadata headers** | YAML-style (`title:`, `tags:`, `time:`) | None — body starts on line 1 |
+| **Markdown processing** | Text::MultiMarkdown (full markdown) | None — line-by-line rendering with auto-linking |
+| **Typography** | Smart quotes, em-dashes, ellipses | Raw text only |
+| **Output location** | `$base_uri/filename.html` | `$base_uri/notes/filename.html` |
+| **Roll page** | `blog.html` | `notes_roll.html` |
+| **JSON feed** | `feed.json` | `recent_notes.json` |
 
 ## Usage
 
@@ -219,10 +236,41 @@ directory (running every minute risks catching partially-synced files).
 | `blog.html` | Front page (latest N posts) |
 | `archive.html` | All posts sorted by date |
 | `tags.html` | Tag index grouped by first letter |
-| `notes.html` | Notes roll |
+| `notes_roll.html` | Notes roll |
 | `atom.xml` | Atom feed (all posts) |
 | `feed.json` | JSON Feed (top N posts) |
 | `recent_notes.json` | JSON Feed for notes |
+| `css/site.css` | Generated site stylesheet |
+| `js/site.js` | Generated site JavaScript (feed loading, webmentions) |
+
+## Customizing the Appearance
+
+The site stylesheet is generated from `lib/Burbleboy/Template/site_css.tt`.
+The primary color is controlled via a CSS custom property:
+
+```css
+:root {
+    --info: #23397f;       /* primary color for nav, headers, links */
+    --header-spacing: 0.05em;
+    --light: #ddd;         /* light text on dark backgrounds */
+}
+```
+
+To change the theme color, either:
+
+1. **Edit the generated file** (`publication_path/css/site.css`) directly
+   (changes persist across publishes unless you run `--publish-all`).
+2. **Edit the template** (`lib/Burbleboy/Template/site_css.tt`) to customize
+   the source — changes apply on every subsequent publish.
+
+### Jumbotron background image
+
+Set `jumbotron_image` in `~/.burbleboy.conf` to a URL to use a background
+image on the front page:
+
+```yaml
+jumbotron_image: https://www.example.com/images/header.jpg
+```
 
 ## Migration from a Previous Install
 
