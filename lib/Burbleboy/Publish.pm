@@ -48,14 +48,13 @@ sub _build_template_stash {
     }
 
     return {
-        frontPage     => { uri => 'blog.html' },
-        notesRoll     => { uri => 'notes_roll.html' },
-        archive       => { uri => 'archive.html' },
-        tagsIndex     => { uri => 'tags.html' },
-        rssFeed       => { uri => 'atom.xml' },
-        jsonFeed      => { uri => URI->new_abs( 'feed.json', "$base_uri/" ) },
-        notesJSONFeed =>
-            { uri => URI->new_abs( 'recent_notes.json', "$base_uri/" ) },
+        frontPage       => { uri => 'blog.html' },
+        notesRoll       => { uri => 'notes_roll.html' },
+        archive         => { uri => 'archive.html' },
+        tagsIndex       => { uri => 'tags.html' },
+        rssFeed         => { uri => 'atom.xml' },
+        jsonFeed        => { uri => URI->new( './feed.json' ) },
+        notesJSONFeed   => { uri => URI->new( './recent_notes.json' ) },
         siteCSS         => { uri => 'css/site.css' },
         siteJS          => { uri => 'js/site.js' },
         siteDescription => $site_desc,

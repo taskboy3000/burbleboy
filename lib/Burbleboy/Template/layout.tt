@@ -121,7 +121,7 @@
                         <ul id="latest-notes-list"></ul>
                     </section>
                     <br>
-                    <section class="pe-1">
+                    <section class="pe-1 d-none">
                         <h3>HTML Validation</h3>
                         <a target="_blank" rel="noreferrer noopener" href="[% u = w3validatorURI.clone; u.query_form("doc", thisURI); u %]">Validate now</a>
                     </section>
