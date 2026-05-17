@@ -282,12 +282,15 @@ To change the theme color, either:
 
 ### Jumbotron background image
 
-Set `jumbotron_image` in `~/.burbleboy.conf` to a URL to use a background
-image on the front page:
+To set a background image for the primary site **jumbotron** section on the front page, add or modify the `jumbotron_image` key in your `~/.burbleboy.conf` configuration file and provide a full image URL.
+
+**Example:**
 
 ```yaml
 jumbotron_image: https://www.example.com/images/header.jpg
 ```
+
+> **Note:** The jumbotron image is primarily used for the site's front page banner.
 
 ## Migration from a Previous Install
 
