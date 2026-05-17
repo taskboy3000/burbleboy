@@ -66,7 +66,7 @@ sub test_production_post {
         like $normal_body, qr/\Q$normal_snip\E/,
             "body_html contains expected text snippet";
 
-        diag "  body length: " . length( $post->{ body_html } );
+        # diag "  body length: " . length( $post->{ body_html } );
     };
 }
 

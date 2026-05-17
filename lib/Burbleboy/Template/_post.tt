@@ -38,7 +38,7 @@
             </div>
         </div>
 
-        [% IF post.tags.size > 0 %]
+        [% IF post.tags && post.tags.size > 0 %]
             <ul class="list-inline tag-list">
                 <li class="list-inline-item">Tags:</li>
                 [% FOREACH tag = post.tags %]

@@ -14,7 +14,7 @@ sub _Markdown {
 
 sub _DoFencedCodeBlocks {
     my ( $self, $text ) = @_;
-    return unless $text;
+    return $text unless $text;
 
     my @out;
     my $in_fence = 0;

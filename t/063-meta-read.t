@@ -253,7 +253,11 @@ sub test_read_meta_corrupt_file {
     print $fh "this is not json";
     close $fh;
 
-    my $results = read_all_meta( $config );
+    my $results;
+    {
+        local $SIG{__WARN__} = sub { };
+        $results = read_all_meta( $config );
+    }
     is( ref $results,     'ARRAY', 'returns arrayref' );
     is( scalar @$results, 0,       'no valid meta files parsed' );
 
@@ -457,8 +461,10 @@ sub test_mixed_type_date_sort {
     my @dates = map { $_->{ date } } @$results;
     my $newer = $dates[ 0 ];
     my $older = $dates[ -1 ];
-    ok( $newer > $older || ( "$newer" gt "$older" && $newer !~ /^\d+$/ ),
-        'mixed post/note dates sorted newest-first' );
+    my $sorted = ( $newer =~ /^\d+$/ && $older =~ /^\d+$/ )
+        ? $newer > $older
+        : "$newer" gt "$older";
+    ok( $sorted, 'mixed post/note dates sorted newest-first' );
 
     teardown_test_site( $site );
 }

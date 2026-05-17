@@ -10,4 +10,9 @@ blib
 burbleboy.code-workspace
 *.old
 .perl-version
+.vscode
+burbleboy.ai.md
+plans
+cpanfile.snapshot
+t/.DS_Store
 
