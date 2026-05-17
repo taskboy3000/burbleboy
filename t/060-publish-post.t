@@ -270,7 +270,7 @@ sub test_emoji_in_post {
     close $fh;
 
     like( $content, qr/Cat emoji:/, 'post body contains emoji label' );
-    like( $content, qr/\x{1F63A}/, 'post output contains emoji character' );
+    like( $content, qr/\x{1F63A}/,  'post output contains emoji character' );
 
     teardown_test_site( $site );
 }

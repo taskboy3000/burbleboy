@@ -255,7 +255,7 @@ sub test_read_meta_corrupt_file {
 
     my $results;
     {
-        local $SIG{__WARN__} = sub { };
+        local $SIG{ __WARN__ } = sub { };
         $results = read_all_meta( $config );
     }
     is( ref $results,     'ARRAY', 'returns arrayref' );
@@ -461,7 +461,8 @@ sub test_mixed_type_date_sort {
     my @dates = map { $_->{ date } } @$results;
     my $newer = $dates[ 0 ];
     my $older = $dates[ -1 ];
-    my $sorted = ( $newer =~ /^\d+$/ && $older =~ /^\d+$/ )
+    my $sorted =
+        ( $newer =~ /^\d+$/ && $older =~ /^\d+$/ )
         ? $newer > $older
         : "$newer" gt "$older";
     ok( $sorted, 'mixed post/note dates sorted newest-first' );

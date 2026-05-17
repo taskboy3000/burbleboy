@@ -182,10 +182,8 @@ sub test_emoji_in_note {
     my $content = do { local $/; <$fh> };
     close $fh;
 
-    like( $content, qr/Note with emoji/,
-        'note body contains emoji label' );
-    like( $content, qr/\x{1F3C6}/,
-        'note output contains emoji character' );
+    like( $content, qr/Note with emoji/, 'note body contains emoji label' );
+    like( $content, qr/\x{1F3C6}/, 'note output contains emoji character' );
 
     teardown_test_site( $site );
 }

@@ -39,8 +39,8 @@ sub _build_template_stash {
     $base_uri =~ s{/$}{};
 
     my $site_desc = $config->{ site_description } || '';
-    unless ($site_desc) {
-        my $author = $config->{ author_name } || 'Unknown Author';
+    unless ( $site_desc ) {
+        my $author = $config->{ author_name }  || 'Unknown Author';
         my $email  = $config->{ author_email } || '';
         $site_desc = "This is a blog by $author";
         $site_desc .= " (<a href=\"mailto:$email\">$email</a>)" if $email;
@@ -48,13 +48,14 @@ sub _build_template_stash {
     }
 
     return {
-        frontPage       => { uri => 'blog.html' },
-        notesRoll       => { uri => 'notes_roll.html' },
-        archive         => { uri => 'archive.html' },
-        tagsIndex       => { uri => 'tags.html' },
-        rssFeed         => { uri => 'atom.xml' },
-        jsonFeed        => { uri => URI->new_abs( 'feed.json',             "$base_uri/" ) },
-        notesJSONFeed   => { uri => URI->new_abs( 'recent_notes.json',     "$base_uri/" ) },
+        frontPage     => { uri => 'blog.html' },
+        notesRoll     => { uri => 'notes_roll.html' },
+        archive       => { uri => 'archive.html' },
+        tagsIndex     => { uri => 'tags.html' },
+        rssFeed       => { uri => 'atom.xml' },
+        jsonFeed      => { uri => URI->new_abs( 'feed.json', "$base_uri/" ) },
+        notesJSONFeed =>
+            { uri => URI->new_abs( 'recent_notes.json', "$base_uri/" ) },
         siteCSS         => { uri => 'css/site.css' },
         siteJS          => { uri => 'js/site.js' },
         siteDescription => $site_desc,
@@ -80,10 +81,15 @@ sub publish_post {
 
     my $output;
     my $stash = _build_template_stash( $config, $post->{ uri } );
-    $tt->process( 'single_post.tt',
-        { %$stash, post => $post, config => $config,
-          activeSection => 'blog' }, \$output )
-        or die $tt->error();
+    $tt->process(
+        'single_post.tt',
+        {   %$stash,
+            post          => $post,
+            config        => $config,
+            activeSection => 'blog'
+        },
+        \$output
+    ) or die $tt->error();
 
     my $pub_file = $post->{ publication_file };
     open my $fh, '>:utf8', $pub_file or die "Cannot write $pub_file: $!";
@@ -107,13 +113,18 @@ sub publish_note {
 
     my $output;
     my $stash = _build_template_stash( $config, $note->{ uri } );
-    $tt->process( 'note.tt',
-        { %$stash, note => $note, config => $config,
-          activeSection => 'notes_roll' }, \$output )
-        or die $tt->error();
+    $tt->process(
+        'note.tt',
+        {   %$stash,
+            note          => $note,
+            config        => $config,
+            activeSection => 'notes_roll'
+        },
+        \$output
+    ) or die $tt->error();
 
     my $pub_file = $note->{ publication_file };
-    my $pub_dir = File::Basename::dirname( $pub_file );
+    my $pub_dir  = File::Basename::dirname( $pub_file );
     mkdir $pub_dir unless -d $pub_dir;
     open my $fh, '>:utf8', $pub_file or die "Cannot write $pub_file: $!";
     print $fh $output;
@@ -211,10 +222,15 @@ sub publish_tags_index {
 
     my $output;
     my $stash = _build_template_stash( $config );
-    $tt->process( 'tags.tt',
-        { %$stash, tag_links => \%tag_links, config => $config,
-          activeSection => 'tags' }, \$output )
-        or die $tt->error();
+    $tt->process(
+        'tags.tt',
+        {   %$stash,
+            tag_links     => \%tag_links,
+            config        => $config,
+            activeSection => 'tags'
+        },
+        \$output
+    ) or die $tt->error();
 
     my $pub_dir =
            $config->{ publication_directory }
@@ -239,10 +255,15 @@ sub publish_archive_page {
         || '.';
     my $output;
     my $stash = _build_template_stash( $config );
-    $tt->process( 'archive.tt',
-        { %$stash, posts => \@sorted, config => $config,
-          activeSection => 'archive' }, \$output )
-        or die $tt->error();
+    $tt->process(
+        'archive.tt',
+        {   %$stash,
+            posts         => \@sorted,
+            config        => $config,
+            activeSection => 'archive'
+        },
+        \$output
+    ) or die $tt->error();
 
     open my $fh, '>:utf8', "$pub_dir/archive.html"
         or die "Cannot write archive.html: $!";
@@ -343,10 +364,15 @@ sub publish_notes_roll {
 
     my $output;
     my $stash = _build_template_stash( $config );
-    $tt->process( 'notes_roll.tt',
-        { %$stash, notes => \@sorted, config => $config,
-          activeSection => 'notes_roll' }, \$output )
-        or die $tt->error();
+    $tt->process(
+        'notes_roll.tt',
+        {   %$stash,
+            notes         => \@sorted,
+            config        => $config,
+            activeSection => 'notes_roll'
+        },
+        \$output
+    ) or die $tt->error();
 
     my $pub_dir =
            $config->{ publication_directory }
@@ -416,8 +442,7 @@ sub publish_site_css {
     mkdir $css_dir unless -d $css_dir;
 
     my $output;
-    $tt->process( 'site_css.tt',
-        { config => $config }, \$output )
+    $tt->process( 'site_css.tt', { config => $config }, \$output )
         or die $tt->error();
 
     open my $fh, '>:utf8', "$css_dir/site.css"
@@ -439,8 +464,7 @@ sub publish_site_js {
 
     my $stash = _build_template_stash( $config );
     my $output;
-    $tt->process( 'site_js.tt',
-        { %$stash, config => $config }, \$output )
+    $tt->process( 'site_js.tt', { %$stash, config => $config }, \$output )
         or die $tt->error();
 
     open my $fh, '>:utf8', "$js_dir/site.js"
@@ -463,13 +487,15 @@ sub incremental_publish_posts {
     for my $file ( @files ) {
         next if $file =~ /^\./;
         if ( $file =~ /[[:cntrl:]]/ ) {
-            warn "Skipping $file (corrupt filename: contains control characters)\n";
+            warn
+                "Skipping $file (corrupt filename: contains control characters)\n";
             next;
         }
         my $source_file = "$source_dir/$file";
 
-        my $post =
-            eval { Burbleboy::Model::Post::parse_post( $source_file, $config ) };
+        my $post = eval {
+            Burbleboy::Model::Post::parse_post( $source_file, $config );
+        };
         if ( $@ ) { warn "Skipping $file: $@" if $verbose; next; }
 
         next
@@ -499,7 +525,8 @@ sub incremental_publish_notes {
 
     opendir my $dh, $notes_dir or die "Cannot read $notes_dir: $!";
     my @files =
-        grep { /\.(?:txt|md|markdown)$/i && -f "$notes_dir/$_" } readdir( $dh );
+        grep { /\.(?:txt|md|markdown)$/i && -f "$notes_dir/$_" }
+        readdir( $dh );
     closedir $dh;
 
     my $pub_dir =
@@ -512,13 +539,15 @@ sub incremental_publish_notes {
     for my $file ( @files ) {
         next if $file =~ /^\./;
         if ( $file =~ /[[:cntrl:]]/ ) {
-            warn "Skipping $file (corrupt filename: contains control characters)\n";
+            warn
+                "Skipping $file (corrupt filename: contains control characters)\n";
             next;
         }
         my $source_file = "$notes_dir/$file";
 
-        my $note =
-            eval { Burbleboy::Model::Note::parse_note( $source_file, $config ) };
+        my $note = eval {
+            Burbleboy::Model::Note::parse_note( $source_file, $config );
+        };
         if ( $@ ) { warn "Skipping note $file: $@" if $verbose; next; }
 
         my $pub_file = $note->{ publication_file };
@@ -635,10 +664,13 @@ sub read_all_meta {
 
     require File::Find;
     my @files;
-    File::Find::find( sub {
-        return unless /\.meta\.json$/ && -f $_;
-        push @files, $File::Find::name;
-    }, $meta_dir );
+    File::Find::find(
+        sub {
+            return unless /\.meta\.json$/ && -f $_;
+            push @files, $File::Find::name;
+        },
+        $meta_dir
+    );
 
     require JSON;
     my $base_uri = $config->{ base_uri } || 'http://localhost/';

@@ -18,7 +18,8 @@ sub _slurp {
 }
 
 sub test_post_has_delimiters {
-    my $content = _slurp( "$FindBin::Bin/../lib/Burbleboy/Template/_post.tt" );
+    my $content =
+        _slurp( "$FindBin::Bin/../lib/Burbleboy/Template/_post.tt" );
 
     like $content, qr/<!-- POST_BODY_START -->/,
         '_post.tt contains POST_BODY_START comment';
@@ -28,7 +29,8 @@ sub test_post_has_delimiters {
 }
 
 sub test_note_has_delimiters {
-    my $content = _slurp( "$FindBin::Bin/../lib/Burbleboy/Template/_note.tt" );
+    my $content =
+        _slurp( "$FindBin::Bin/../lib/Burbleboy/Template/_note.tt" );
 
     like $content, qr/<!-- POST_BODY_START -->/,
         '_note.tt contains POST_BODY_START comment';

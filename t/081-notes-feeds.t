@@ -185,8 +185,8 @@ sub test_notes_json_with_notes {
     is( scalar @{ $data->{ items } }, 3,       '3 items in notes JSON feed' );
 
     for my $item ( @{ $data->{ items } } ) {
-        ok( exists $item->{ title },         'item has title field' );
-        ok( length( $item->{ title } ) > 0,  'title is non-empty' );
+        ok( exists $item->{ title },        'item has title field' );
+        ok( length( $item->{ title } ) > 0, 'title is non-empty' );
     }
 
     teardown_test_site( $site );
@@ -230,7 +230,8 @@ sub test_notes_json_one_note {
     my $data = eval { JSON::decode_json( $content ) };
     is( $@, '', 'notes JSON feed with 1 note is valid JSON' );
     is( scalar @{ $data->{ items } }, 1, '1 item in notes JSON feed' );
-    ok( length( $data->{ items }[0]{ title } ) > 0, 'single note title is non-empty' );
+    ok( length( $data->{ items }[ 0 ]{ title } ) > 0,
+        'single note title is non-empty' );
 
     teardown_test_site( $site );
 }
@@ -255,8 +256,9 @@ sub test_notes_json_truncation {
     is( $@, '', 'Truncated notes JSON feed is valid JSON' );
     is( scalar @{ $data->{ items } },
         3, 'notes JSON feed truncated to show_max_posts items' );
-    ok( length( $data->{ items }[0]{ title } ) > 0,
-        'truncated note title is non-empty' );
+    ok( length( $data->{ items }[ 0 ]{ title } ) > 0,
+        'truncated note title is non-empty'
+    );
 
     teardown_test_site( $site );
 }

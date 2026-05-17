@@ -41,8 +41,10 @@ sub test_init_creates_config {
     my $output = `perl "$FindBin::Bin/../bin/burbleboycmd" --init 2>&1`;
     is( $?, 0, '--init exits 0' ) or diag $output;
     ok( -f "$site->{ tmpdir }/.burbleboy.conf",  'config file created' );
-    ok( -d "$site->{ tmpdir }/burbleboy/source",  'source directory created' );
-    ok( -d "$site->{ tmpdir }/burbleboy/docroot", 'publication directory created' );
+    ok( -d "$site->{ tmpdir }/burbleboy/source", 'source directory created' );
+    ok( -d "$site->{ tmpdir }/burbleboy/docroot",
+        'publication directory created'
+    );
 
     teardown_test_site( $site );
 }
@@ -71,8 +73,11 @@ sub test_show_conf_without_config {
 
     my $output = `perl "$FindBin::Bin/../bin/burbleboycmd" --show-conf 2>&1`;
     is( $?, 0, '--show-conf exits 0' ) or diag $output;
-    like( $output, qr/No configuration file found/,
-        '--show-conf mentions no config' );
+    like(
+        $output,
+        qr/No configuration file found/,
+        '--show-conf mentions no config'
+    );
     like( $output, qr/base_uri/, '--show-conf shows default base_uri' );
 
     teardown_test_site( $site );
@@ -89,7 +94,8 @@ sub test_lock_file_location {
 
     local $ENV{ HOME } = $site->{ tmpdir };
 
-    my $output = `perl "$FindBin::Bin/../bin/burbleboycmd" --publish-all 2>&1`;
+    my $output =
+        `perl "$FindBin::Bin/../bin/burbleboycmd" --publish-all 2>&1`;
     is( $?, 0, '--publish-all exits 0' ) or diag $output;
 
     ok( -f "$site->{ publication_dir }/.burbleboycmd.lock",
@@ -166,7 +172,8 @@ sub test_version_output {
 }
 
 sub test_unknown_flag {
-    my $output = `perl "$FindBin::Bin/../bin/burbleboycmd" --unknown-flag 2>&1`;
+    my $output =
+        `perl "$FindBin::Bin/../bin/burbleboycmd" --unknown-flag 2>&1`;
     isnt( $?, 0, 'unknown flag exits non-zero' );
 }
 
@@ -181,7 +188,8 @@ sub test_publish_all_with_config {
 
     local $ENV{ HOME } = $site->{ tmpdir };
 
-    my $output = `perl "$FindBin::Bin/../bin/burbleboycmd" --publish-all 2>&1`;
+    my $output =
+        `perl "$FindBin::Bin/../bin/burbleboycmd" --publish-all 2>&1`;
     is( $?, 0, '--publish-all exits 0' ) or diag $output;
 
     ok( -e "$site->{ publication_dir }/2024y01m15d_12h00m00s-test-post.html",

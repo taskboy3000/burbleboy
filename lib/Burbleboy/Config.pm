@@ -108,7 +108,8 @@ sub new {
     my $class  = shift;
     my %params = @_;
 
-    my $config_file = $params{ config_file } || home_dir() . '/.burbleboy.conf';
+    my $config_file =
+        $params{ config_file } || home_dir() . '/.burbleboy.conf';
     my $config;
     if ( -f $config_file ) {
         $config = read_config( $config_file );
