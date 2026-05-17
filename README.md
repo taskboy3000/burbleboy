@@ -237,6 +237,7 @@ directory (running every minute risks catching partially-synced files).
 | `BASENAME.html` | Individual post (per source file) |
 | `NOTENAME.html` | Individual note |
 | `blog.html` | Front page (latest N posts) |
+| `index.html` | Symlink to `blog.html` (makes the site root serve the front page) |
 | `archive.html` | All posts sorted by date |
 | `tags.html` | Tag index grouped by first letter |
 | `notes_roll.html` | Notes roll |
@@ -245,6 +246,19 @@ directory (running every minute risks catching partially-synced files).
 | `recent_notes.json` | JSON Feed for notes |
 | `css/site.css` | Generated site stylesheet |
 | `js/site.js` | Generated site JavaScript (feed loading, webmentions) |
+
+### Web server setup
+
+The publish step creates `publication_path/index.html` as a **symlink** to
+`blog.html`, so that visiting the site root serves the front page.  Make sure
+your web server follows symlinks:
+
+- **Apache** — `Options +FollowSymLinks` (default for most configs)
+- **nginx** — `disable_symlinks off;` (default)
+- **Lighttpd** — `server.follow-symlink = "enable"` (default)
+
+No additional configuration should be needed, but verify that your DocumentRoot
+(or UserDir directory) permits symlink following.
 
 ## Customizing the Appearance
 

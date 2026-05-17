@@ -48,15 +48,15 @@ sub _build_template_stash {
     }
 
     return {
-        frontPage       => { uri => URI->new_abs( 'blog.html',            "$base_uri/" ) },
-        notesRoll       => { uri => URI->new_abs( 'notes_roll.html',      "$base_uri/" ) },
-        archive         => { uri => URI->new_abs( 'archive.html',          "$base_uri/" ) },
-        tagsIndex       => { uri => URI->new_abs( 'tags.html',             "$base_uri/" ) },
-        rssFeed         => { uri => URI->new_abs( 'atom.xml',              "$base_uri/" ) },
+        frontPage       => { uri => 'blog.html' },
+        notesRoll       => { uri => 'notes_roll.html' },
+        archive         => { uri => 'archive.html' },
+        tagsIndex       => { uri => 'tags.html' },
+        rssFeed         => { uri => 'atom.xml' },
         jsonFeed        => { uri => URI->new_abs( 'feed.json',             "$base_uri/" ) },
         notesJSONFeed   => { uri => URI->new_abs( 'recent_notes.json',     "$base_uri/" ) },
-        siteCSS         => { uri => URI->new_abs( 'css/site.css',          "$base_uri/" ) },
-        siteJS          => { uri => URI->new_abs( 'js/site.js',            "$base_uri/" ) },
+        siteCSS         => { uri => 'css/site.css' },
+        siteJS          => { uri => 'js/site.js' },
         siteDescription => $site_desc,
         w3validatorURI  => URI->new( 'https://validator.w3.org/nu/' ),
         thisURI         => $this_uri || URI->new( "$base_uri/" ),
@@ -151,6 +151,14 @@ sub publish_front_page {
         or die "Cannot write blog.html: $!";
     print $fh $output;
     close $fh;
+
+    my $index_file = "$pub_dir/index.html";
+    if ( -l $index_file || !-e $index_file ) {
+        unlink $index_file if -l $index_file;
+        symlink 'blog.html', $index_file
+            or warn "Cannot create index.html symlink: $!";
+    }
+
     return 1;
 }
 
