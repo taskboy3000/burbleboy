@@ -21,6 +21,7 @@ sub parse_note {
     close $fh;
 
     my $note = {};
+    $note->{ title }    = make_title( $source_file );
     $note->{ body }     = $raw_body;
     $note->{ body_raw } = $raw_body;
 
@@ -136,6 +137,14 @@ sub _validate_url {
     return unless defined $url;
     return $url if $url =~ /^https?:\/\//i;
     return;
+}
+
+sub make_title {
+    my ( $filename ) = @_;
+    return if !$filename;
+    my $basename = basename( $filename, '.txt' );
+    $basename =~ s/_/ /g;
+    return _escape_html( $basename );
 }
 
 1;
