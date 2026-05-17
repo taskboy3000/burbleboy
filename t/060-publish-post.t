@@ -39,6 +39,7 @@ sub Main {
     test_skip();
     test_missing_source();
     test_bad_template();
+    test_emoji_in_post();
     test_try_publish_success();
     test_try_publish_catches_die();
     test_try_publish_verbose_warns();
@@ -231,6 +232,45 @@ sub test_skip {
 
     ok( !needs_update( $source, $pub_file ),
         'needs_update false when source older than output' );
+
+    teardown_test_site( $site );
+}
+
+sub test_emoji_in_post {
+    my $site   = setup_test_site();
+    my $config = test_config();
+    $config->{ publication_path } = $site->{ publication_dir };
+
+    my $source = "$site->{ source_dir }/2024y07m01d_12h00m00s-emoji.md";
+    open my $fh, '>:utf8', $source or die "Cannot write $source: $!";
+    print $fh "title: Emoji Post\n\nCat emoji: \x{1F63A}\n";
+    close $fh;
+
+    _write_minimal_templates( $site->{ tmpdir } );
+
+    my $tt = Template->new(
+        {   INCLUDE_PATH => $site->{ tmpdir },
+            ABSOLUTE     => 1,
+            RELATIVE     => 1,
+        }
+    );
+
+    my $warnings = '';
+    local $SIG{ __WARN__ } = sub { $warnings .= shift };
+
+    my $post = publish_post( $source, $config, $tt );
+
+    is( $warnings, '', 'no warnings during publish_post with emoji' );
+
+    ok( -e $post->{ publication_file },
+        'output file created for emoji post' );
+
+    open $fh, '<:encoding(UTF-8)', $post->{ publication_file } or die;
+    my $content = do { local $/; <$fh> };
+    close $fh;
+
+    like( $content, qr/Cat emoji:/, 'post body contains emoji label' );
+    like( $content, qr/\x{1F63A}/, 'post output contains emoji character' );
 
     teardown_test_site( $site );
 }

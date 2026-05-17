@@ -77,7 +77,7 @@ sub parse_post {
 sub _read_source {
     my ( $filepath ) = @_;
 
-    open my $fh, '<', $filepath or die "Cannot read $filepath: $!";
+    open my $fh, '<:encoding(UTF-8)', $filepath or die "Cannot read $filepath: $!";
 
     my %headers;
     my @ordered_attrs = qw( title time published_filename guid tags );

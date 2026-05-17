@@ -17,6 +17,7 @@ sub Main {
     test_fresh_note();
     test_note_body_rendering();
     test_note_filename();
+    test_emoji_in_note();
     test_note_in_reply_to();
     test_note_like_of();
     test_empty_body_note();
@@ -144,6 +145,47 @@ sub test_note_filename {
         qr/\.html$/, 'publication_file ends with .html' );
     ok( -e $note->{ publication_file },
         'output file exists at publication_file path' );
+
+    teardown_test_site( $site );
+}
+
+sub test_emoji_in_note {
+    my $site   = setup_test_site();
+    my $config = test_config();
+    $config->{ publication_path } = $site->{ publication_dir };
+
+    my $source = "$site->{ source_dir }/emoji-note.md";
+    open my $fh, '>:utf8', $source or die "Cannot write $source: $!";
+    print $fh "Note with emoji \x{1F3C6}\n";
+    close $fh;
+
+    _write_minimal_templates( $site->{ tmpdir } );
+
+    my $tt = Template->new(
+        {   INCLUDE_PATH => $site->{ tmpdir },
+            ABSOLUTE     => 1,
+            RELATIVE     => 1,
+        }
+    );
+
+    my $warnings = '';
+    local $SIG{ __WARN__ } = sub { $warnings .= shift };
+
+    my $note = publish_note( $source, $config, $tt );
+
+    is( $warnings, '', 'no warnings during publish_note with emoji' );
+
+    ok( -e $note->{ publication_file },
+        'output file created for emoji note' );
+
+    open $fh, '<:encoding(UTF-8)', $note->{ publication_file } or die;
+    my $content = do { local $/; <$fh> };
+    close $fh;
+
+    like( $content, qr/Note with emoji/,
+        'note body contains emoji label' );
+    like( $content, qr/\x{1F3C6}/,
+        'note output contains emoji character' );
 
     teardown_test_site( $site );
 }

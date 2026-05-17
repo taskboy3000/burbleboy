@@ -15,7 +15,7 @@ sub parse_note {
 
     die "Source file not found: $source_file" unless -e $source_file;
 
-    open my $fh, '<', $source_file or die "Cannot read $source_file: $!";
+    open my $fh, '<:encoding(UTF-8)', $source_file or die "Cannot read $source_file: $!";
     my $raw_body = do { local $/; <$fh> };
     close $fh;
 

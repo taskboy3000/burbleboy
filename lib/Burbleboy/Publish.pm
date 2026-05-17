@@ -48,7 +48,7 @@ sub publish_post {
         or die $tt->error();
 
     my $pub_file = $post->{ publication_file };
-    open my $fh, '>', $pub_file or die "Cannot write $pub_file: $!";
+    open my $fh, '>:utf8', $pub_file or die "Cannot write $pub_file: $!";
     print $fh $output;
     close $fh;
 
@@ -72,7 +72,7 @@ sub publish_note {
         or die $tt->error();
 
     my $pub_file = $note->{ publication_file };
-    open my $fh, '>', $pub_file or die "Cannot write $pub_file: $!";
+    open my $fh, '>:utf8', $pub_file or die "Cannot write $pub_file: $!";
     print $fh $output;
     close $fh;
 
@@ -101,7 +101,7 @@ sub publish_front_page {
            $config->{ publication_directory }
         || $config->{ publication_path }
         || '.';
-    open my $fh, '>', "$pub_dir/blog.html"
+    open my $fh, '>:utf8', "$pub_dir/blog.html"
         or die "Cannot write blog.html: $!";
     print $fh $output;
     close $fh;
@@ -164,7 +164,7 @@ sub publish_tags_index {
            $config->{ publication_directory }
         || $config->{ publication_path }
         || '.';
-    open my $fh, '>', "$pub_dir/tags.html"
+    open my $fh, '>:utf8', "$pub_dir/tags.html"
         or die "Cannot write tags.html: $!";
     print $fh $output;
     close $fh;
@@ -186,7 +186,7 @@ sub publish_archive_page {
         { posts => \@sorted, config => $config }, \$output )
         or die $tt->error();
 
-    open my $fh, '>', "$pub_dir/archive.html"
+    open my $fh, '>:utf8', "$pub_dir/archive.html"
         or die "Cannot write archive.html: $!";
     print $fh $output;
     close $fh;
@@ -228,7 +228,7 @@ sub publish_atom_feed {
            $config->{ publication_directory }
         || $config->{ publication_path }
         || '.';
-    open my $fh, '>', "$pub_dir/atom.xml"
+    open my $fh, '>:utf8', "$pub_dir/atom.xml"
         or die "Cannot write atom.xml: $!";
     print $fh $output;
     close $fh;
@@ -292,7 +292,7 @@ sub publish_notes_roll {
            $config->{ publication_directory }
         || $config->{ publication_path }
         || '.';
-    open my $fh, '>', "$pub_dir/notes.html"
+    open my $fh, '>:utf8', "$pub_dir/notes.html"
         or die "Cannot write notes.html: $!";
     print $fh $output;
     close $fh;
@@ -354,6 +354,10 @@ sub incremental_publish_posts {
     my @published;
     for my $file ( @files ) {
         next if $file =~ /^\./;
+        if ( $file =~ /[[:cntrl:]]/ ) {
+            warn "Skipping $file (corrupt filename: contains control characters)\n";
+            next;
+        }
         my $source_file = "$source_dir/$file";
 
         my $post =
@@ -399,6 +403,10 @@ sub incremental_publish_notes {
     my @published;
     for my $file ( @files ) {
         next if $file =~ /^\./;
+        if ( $file =~ /[[:cntrl:]]/ ) {
+            warn "Skipping $file (corrupt filename: contains control characters)\n";
+            next;
+        }
         my $source_file = "$notes_dir/$file";
 
         my $note =
@@ -429,7 +437,7 @@ sub incremental_publish_notes {
 
 sub _slurp {
     my ( $file ) = @_;
-    open my $fh, '<', $file or return;
+    open my $fh, '<:encoding(UTF-8)', $file or return;
     local $/;
     my $content = <$fh>;
     close $fh;

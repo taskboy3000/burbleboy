@@ -145,6 +145,11 @@ Typography: straight quotes → curly, `---` → em-dash, `--` → en-dash,
 
 HTML output is sanitized via a whitelist tag filter (XSS protection).
 
+**Unicode support**: Source `.md` files are read as UTF-8. Any Unicode
+characters (emoji, accented letters, non-Latin scripts, etc.) are preserved
+through the full pipeline and faithfully reproduced in the published HTML,
+Atom XML, and JSON feeds.
+
 ### Notes (`.txt`)
 
 Notes are short microposts with optional social annotations.  Filename
