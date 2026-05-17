@@ -15,7 +15,7 @@ sub config_defaults {
         base_uri         => 'http://localhost/',
         site_description => '',
         engine_name      => 'burbleboy/taskboy3000',
-        engine_uri       => 'https://github.com/jjohn/burbleboy',
+        engine_uri       => 'https://github.com/taskboy3000/burbleboy',
         engine_version   => '1.0',
         image_alt        => '[image]',
         show_max_posts   => 5,
