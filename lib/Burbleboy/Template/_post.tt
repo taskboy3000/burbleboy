@@ -53,6 +53,7 @@
 
 </article>
 
+[% IF config.enable_replies %]
 <p class="small">
     <a href="#" data-bs-toggle="modal" data-bs-target="#mdl-comment-referral-[% post.id %]">💬 Share a response to this post</a>
 </p>
@@ -93,3 +94,4 @@
 
     </div>
 </div>
+[% END %]

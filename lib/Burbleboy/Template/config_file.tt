@@ -84,9 +84,12 @@ image_alt: [% config.image_alt %]
 # the number of items in the RSS and JSON feeds
 show_max_posts: [% config.show_max_posts %]
 
-# Interested in indieweb's Web Mentions? https://www.w3.org/TR/webmention/
-# Setup a web mention listener like whim (https://github.com/jmacdotorg/whim)
-# Then add the URL below.
+# Set to true to enable the "Share a response" webmention UI on posts.
+# Also requires webmention_endpoint to be set.
+enable_replies: [% config.enable_replies %]
+
+# If enable_replies is true, set your webmention endpoint here.
+# See https://www.w3.org/TR/webmention/
 webmention_endpoint: [% config.webmention_endpoint %]
 
 ######################

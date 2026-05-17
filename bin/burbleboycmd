@@ -228,6 +228,7 @@ sub version_text {
 sub _setup_template {
     return Template->new(
         {   INCLUDE_PATH => "$FindBin::Bin/../lib/Burbleboy/Template",
+            ENCODING     => 'utf8',
             ABSOLUTE     => 1,
             RELATIVE     => 1,
         }
@@ -349,7 +350,8 @@ sub _show_config {
     $config->{ publication_path } //= "$home/burbleboy/docroot";
 
     my @keys = qw(base_uri title author_name author_email source_path
-        source_notes_path publication_path show_max_posts site_description);
+        source_notes_path publication_path show_max_posts site_description
+        enable_replies);
     for my $key (@keys) {
         next unless exists $config->{ $key };
         my $val = $config->{ $key };

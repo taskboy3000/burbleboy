@@ -20,6 +20,7 @@ sub config_defaults {
         image_alt        => '[image]',
         show_max_posts   => 5,
         custom_nav_items => [],
+        enable_replies   => 0,
     };
 }
 

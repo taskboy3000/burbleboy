@@ -87,6 +87,9 @@ Use `bin/burbleboycmd --show-conf` to display your current configuration
 - `show_max_posts` — how many posts on the front page and in JSON feed
   (default: 5)
 - `webmention_endpoint` — webmention endpoint URL
+- `enable_replies` — set to `true` to show the "Share a response"
+  webmention submission UI on each post (requires `webmention_endpoint`)
+  ([webmentions](https://www.w3.org/TR/webmention/), [whim](https://github.com/jmacdotorg/whim))
 - `site_description` — about-text for the sidebar (fallback: "This is a blog
   by *author_name*")
 - `jumbotron_image` — URL for the front-page jumbotron background image

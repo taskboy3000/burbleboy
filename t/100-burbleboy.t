@@ -60,7 +60,8 @@ sub test_publish_all {
     };
 
     my $tt = Template->new(
-        { INCLUDE_PATH => "$FindBin::Bin/../lib/Burbleboy/Template" } );
+        { INCLUDE_PATH => "$FindBin::Bin/../lib/Burbleboy/Template",
+          ENCODING     => 'utf8' } );
 
     opendir my $dh, $source or die "Cannot read $source: $!";
     my @post_files = sort grep { /\.md$/ && -f "$source/$_" } readdir( $dh );
