@@ -284,9 +284,17 @@ sub publish_archive_page {
     return 1;
 }
 
+sub _strip_invalid_xml_chars {
+    my ( $text ) = @_;
+    return '' unless defined $text;
+    $text =~ s/[^\x09\x0A\x0D\x20-\x7E\x85\xA0-\x{D7FF}]//g;
+    return $text;
+}
+
 sub _escape_cdata {
     my ( $text ) = @_;
     return '' unless defined $text;
+    $text = _strip_invalid_xml_chars( $text );
     $text =~ s/]]>/]]]]><![CDATA[>/g;
     return $text;
 }
@@ -318,12 +326,12 @@ sub publish_atom_feed {
     my $output;
     $tt->process(
         'feed.tt',
-        {   posts        => \@feed_posts,
-            config       => $config,
-            timestamp    => $timestamp,
-            feed_title   => _escape_cdata( $config->{ title } ),
-            feed_author  => _escape_cdata( $config->{ author_name } ),
-            feed_email   => _escape_cdata( $config->{ author_email } ),
+        {   posts       => \@feed_posts,
+            config      => $config,
+            timestamp   => $timestamp,
+            feed_title  => _escape_cdata( $config->{ title } ),
+            feed_author => _escape_cdata( $config->{ author_name } ),
+            feed_email  => _escape_cdata( $config->{ author_email } ),
         },
         \$output
     ) or die $tt->error();

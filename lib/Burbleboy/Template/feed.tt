@@ -3,21 +3,20 @@
 
   <title><![CDATA[[% feed_title %]]]></title>
   <link href="[% config.base_uri %]/atom.xml" rel="self" />
-  <link href="[% config.base_uri %]" />
+  <link href="[% config.base_uri | xml %]" />
   <updated>[% timestamp %]</updated>
-  <id>[% config.base_uri %]</id>
+  <id>[% config.base_uri | xml %]</id>
   <author>
     <name><![CDATA[[% feed_author %]]]></name>
     <email><![CDATA[[% feed_email %]]]></email>
   </author>
-
 [% FOR post IN posts %]
   <entry>
     <title type="html"><![CDATA[[% post.title %]]]></title>
-    <link href="[% post.uri %]"/>
+    <link href="[% post.uri | xml %]"/>
     <published>[% post.published_timestamp %]</published>
     <updated>[% post.updated_timestamp %]</updated>
-    <id>[% post.uri %]</id>
+    <id>[% post.uri | xml %]</id>
     <content type="html"><![CDATA[[% post.body %]]]></content>
   </entry>
 [% END %]

@@ -267,13 +267,18 @@ sub _gen_published_filename {
     my ( $headers, $date, $title, $source_file ) = @_;
 
     if ( $headers->{ published_filename } ) {
-        return $headers->{ published_filename };
+        my $name = $headers->{ published_filename };
+        $name =~ s/[<>&"']/_/g;
+        $name =~ s/[[:cntrl:]]//g;
+        return $name;
     }
 
     my $filename = basename( $source_file );
 
     if ( $filename =~ /^\d{4}y\d{2}m\d{2}d_\d{2}h\d{2}m\d{2}s-/ ) {
         $filename =~ s/\..*$/.html/;
+        $filename =~ s/[<>&"']/_/g;
+        $filename =~ s/[[:cntrl:]]//g;
         return $filename;
     }
 
@@ -317,7 +322,11 @@ sub _build_uri {
         $base_uri .= '/';
     }
 
-    return $base_uri . $published_filename;
+    my $path = $published_filename;
+    $path =~ s/[<>&"']/_/g;
+    $path =~ s/[[:cntrl:]]//g;
+
+    return $base_uri . $path;
 }
 
 sub _typography {

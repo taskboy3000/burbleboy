@@ -28,6 +28,7 @@ sub Main {
     test_published_filename();
     test_bad_date_format();
     test_guid_and_extra_keys();
+    test_sanitized_uri();
     done_testing();
 }
 
@@ -361,6 +362,30 @@ EOF
         'test-guid-12345', 'existing GUID preserved from headers' );
     ok( $post->{ uri }, 'uri generated' );
     like( $post->{ uri }, qr/\.html$/, 'uri ends in html' );
+
+    $cleanup->();
+}
+
+sub test_sanitized_uri {
+    my $content = <<'EOF';
+title: Sanitize URI
+
+URI should not contain HTML tags or special XML chars.
+EOF
+
+    my ( $filepath, $cleanup ) =
+        make_temp_post( $content,
+        '2023y01m15d_12h00m00s-<em>bad<_em>-chars&quotes".md' );
+    my $config = test_config();
+
+    my $post = parse_post( $filepath, $config );
+
+    unlike( $post->{ uri },
+        qr/[<>&"']/, 'uri does not contain < > & " or single quote' );
+    ok( $post->{ uri } !~ /[<>&"']/,
+        'uri is clean of XML-special characters' );
+    like( $post->{ published_filename },
+        qr/_em.*_em/, 'HTML tags replaced with underscores in filename' );
 
     $cleanup->();
 }
