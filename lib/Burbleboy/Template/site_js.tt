@@ -43,7 +43,7 @@ function populateLatestNotes (feed) {
 }
 
 async function getRecentPosts () {
-    let feedURL = '[% jsonFeed.uri.as_string %]';
+    let feedURL = '[% jsonFeedAbs.as_string %]';
     let response = await fetch(feedURL);
     let json;
     if (response.ok) {
@@ -53,7 +53,7 @@ async function getRecentPosts () {
 }
 
 async function getRecentNotes () {
-    let feedURL = '[% notesJSONFeed.uri.as_string %]';
+    let feedURL = '[% notesJSONFeedAbs.as_string %]';
     let response = await fetch(feedURL);
     let json;
     if (response.ok) {

@@ -103,7 +103,7 @@ nav.navbar {
     color: var(--light) !important;
 }
 
-[% IF config.jumbotron_image %]
+[%- IF config.jumbotron_image %]
 .jumbotron {
     background-image: url('[% config.jumbotron_image %]');
     padding:0;
@@ -122,12 +122,15 @@ nav.navbar {
     margin-right:auto;
 }
 
-[% END %]
-
+[%- END %]
 
 .content {
     padding-right: 0;
     margin-top: -10px;
+}
+
+div.content:has(> div.note) {
+    margin-top: 0;
 }
 
 .content blockquote {

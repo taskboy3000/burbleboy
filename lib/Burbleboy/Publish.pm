@@ -60,6 +60,8 @@ sub _build_template_stash {
         }
     }
 
+    my $base_uri_slash = $base_uri . '/';
+
     return {
         frontPage     => { uri => $prefix . 'blog.html' },
         notesRoll     => { uri => $prefix . 'notes_roll.html' },
@@ -68,11 +70,13 @@ sub _build_template_stash {
         rssFeed       => { uri => $prefix . 'atom.xml' },
         jsonFeed      => { uri => URI->new( $prefix . 'feed.json' ) },
         notesJSONFeed => { uri => URI->new( $prefix . 'recent_notes.json' ) },
-        siteCSS       => { uri => $prefix . 'css/site.css' },
-        siteJS        => { uri => $prefix . 'js/site.js' },
-        siteDescription => $site_desc,
-        w3validatorURI  => URI->new( 'https://validator.w3.org/nu/' ),
-        thisURI         => $this_uri || URI->new( "$base_uri/" ),
+        jsonFeedAbs      => URI->new( $base_uri_slash . 'feed.json' ),
+        notesJSONFeedAbs => URI->new( $base_uri_slash . 'recent_notes.json' ),
+        siteCSS          => { uri => $prefix . 'css/site.css' },
+        siteJS           => { uri => $prefix . 'js/site.js' },
+        siteDescription  => $site_desc,
+        w3validatorURI   => URI->new( 'https://validator.w3.org/nu/' ),
+        thisURI          => $this_uri || URI->new( "$base_uri/" ),
     };
 }
 

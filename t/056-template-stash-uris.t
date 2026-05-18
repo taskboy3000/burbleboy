@@ -21,7 +21,7 @@ sub _make_config {
 }
 
 sub _check_uris {
-    my ( $stash, $desc, $expect_prefix ) = @_;
+    my ( $stash, $desc, $expect_prefix, $base_uri ) = @_;
 
     my @uri_keys = qw(
         frontPage notesRoll archive tagsIndex
@@ -47,34 +47,47 @@ sub _check_uris {
         my $got = ref $uri ? "$uri" : $uri;
         is( $got, $expected[ $i ], "$desc: $key uri is '$expected[$i]'" );
     }
+
+    $base_uri =~ s{/$}{};
+    is( "$stash->{ jsonFeedAbs }",
+        "$base_uri/feed.json",
+        "$desc: jsonFeedAbs is absolute"
+    );
+    is( "$stash->{ notesJSONFeedAbs }",
+        "$base_uri/recent_notes.json",
+        "$desc: notesJSONFeedAbs is absolute"
+    );
 }
 
 sub test_root_page_uris {
-    my $stash =
-        Burbleboy::Publish::_build_template_stash( _make_config(), undef );
-    _check_uris( $stash, 'root page', '' );
+    my $config = _make_config();
+    my $stash  = Burbleboy::Publish::_build_template_stash( $config, undef );
+    _check_uris( $stash, 'root page', '', $config->{ base_uri } );
 }
 
 sub test_notes_page_uris {
-    my $stash = Burbleboy::Publish::_build_template_stash( _make_config(),
+    my $config = _make_config();
+    my $stash  = Burbleboy::Publish::_build_template_stash( $config,
         'https://www.example.com/notes/some-note.html' );
-    _check_uris( $stash, 'notes page', '../' );
+    _check_uris( $stash, 'notes page', '../', $config->{ base_uri } );
 }
 
 sub test_dev_subdirectory_uris {
-    my $stash = Burbleboy::Publish::_build_template_stash(
-        _make_config( 'http://localhost/~user/blog/' ),
-        'http://localhost/~user/blog/notes/some-note.html'
+    my $config = _make_config( 'http://localhost/~user/blog/' );
+    my $stash  = Burbleboy::Publish::_build_template_stash( $config,
+        'http://localhost/~user/blog/notes/some-note.html' );
+    _check_uris(
+        $stash, 'notes page with subdir base',
+        '../',  $config->{ base_uri }
     );
-    _check_uris( $stash, 'notes page with subdir base', '../' );
 }
 
 sub test_dev_root_page_subdirectory_base {
-    my $stash = Burbleboy::Publish::_build_template_stash(
-        _make_config( 'http://localhost/~user/blog/' ),
-        'http://localhost/~user/blog/some-post.html'
-    );
-    _check_uris( $stash, 'root page with subdir base', '' );
+    my $config = _make_config( 'http://localhost/~user/blog/' );
+    my $stash  = Burbleboy::Publish::_build_template_stash( $config,
+        'http://localhost/~user/blog/some-post.html' );
+    _check_uris( $stash, 'root page with subdir base',
+        '', $config->{ base_uri } );
 }
 
 sub Main {
