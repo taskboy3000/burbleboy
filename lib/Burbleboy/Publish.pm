@@ -48,16 +48,28 @@ sub _build_template_stash {
         $site_desc .= '.';
     }
 
+    my $prefix = '';
+    if ( $this_uri ) {
+        my $base_path = URI->new( $base_uri )->path;
+        my $page_path = URI->new( $this_uri )->path;
+        ( my $suffix = $page_path ) =~ s{^\Q$base_path\E}{};
+        $suffix =~ s{^/}{};
+        if ( $suffix ) {
+            my $depth = ( $suffix =~ tr{/}{} );
+            $prefix = '../' x $depth;
+        }
+    }
+
     return {
-        frontPage       => { uri => '/blog.html' },
-        notesRoll       => { uri => '/notes_roll.html' },
-        archive         => { uri => '/archive.html' },
-        tagsIndex       => { uri => '/tags.html' },
-        rssFeed         => { uri => '/atom.xml' },
-        jsonFeed        => { uri => URI->new( '/feed.json' ) },
-        notesJSONFeed   => { uri => URI->new( '/recent_notes.json' ) },
-        siteCSS         => { uri => '/css/site.css' },
-        siteJS          => { uri => '/js/site.js' },
+        frontPage     => { uri => $prefix . 'blog.html' },
+        notesRoll     => { uri => $prefix . 'notes_roll.html' },
+        archive       => { uri => $prefix . 'archive.html' },
+        tagsIndex     => { uri => $prefix . 'tags.html' },
+        rssFeed       => { uri => $prefix . 'atom.xml' },
+        jsonFeed      => { uri => URI->new( $prefix . 'feed.json' ) },
+        notesJSONFeed => { uri => URI->new( $prefix . 'recent_notes.json' ) },
+        siteCSS       => { uri => $prefix . 'css/site.css' },
+        siteJS        => { uri => $prefix . 'js/site.js' },
         siteDescription => $site_desc,
         w3validatorURI  => URI->new( 'https://validator.w3.org/nu/' ),
         thisURI         => $this_uri || URI->new( "$base_uri/" ),
