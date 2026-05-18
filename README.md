@@ -200,7 +200,7 @@ bin/burbleboycmd --show-conf
 # Publish everything (full rebuild)
 bin/burbleboycmd --publish-all
 
-# Only publish changed files (incremental)
+# Only publish files where the source is newer than the published version (mtime-based incremental)
 bin/burbleboycmd --publish-new
 
 # Force republish even if source hasn't changed

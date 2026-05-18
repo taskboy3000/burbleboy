@@ -18,6 +18,7 @@ our @EXPORT_OK = qw(
     incremental_publish_posts incremental_publish_notes
     try_publish write_meta read_all_meta
     extract_body_from_html fill_body_for_posts fill_body_for_top_n
+    run_publish _publish_posts _publish_notes
 );
 our %EXPORT_TAGS = ( all => \@EXPORT_OK );
 
@@ -497,9 +498,12 @@ sub incremental_publish_posts {
         };
         if ( $@ ) { warn "Skipping $file: $@" if $verbose; next; }
 
-        next
-            unless $force
-            || needs_update( $source_file, $post->{ publication_file } );
+        unless ( $force
+            || needs_update( $source_file, $post->{ publication_file } ) )
+        {
+            say "Skipping $file (up-to-date)" if $verbose;
+            next;
+        }
 
         if ( $dryrun ) {
             say "(dryrun) Would publish: $file";
@@ -550,7 +554,10 @@ sub incremental_publish_notes {
         if ( $@ ) { warn "Skipping note $file: $@" if $verbose; next; }
 
         my $pub_file = $note->{ publication_file };
-        next unless $force || needs_update( $source_file, $pub_file );
+        unless ( $force || needs_update( $source_file, $pub_file ) ) {
+            say "Skipping note $file (up-to-date)" if $verbose;
+            next;
+        }
 
         if ( $dryrun ) {
             say "(dryrun) Would publish note: $file";
@@ -789,6 +796,209 @@ sub try_publish {
     }
 
     return $result;
+}
+
+sub run_publish {
+    my ( $config, $tt, $opts ) = @_;
+
+    my $source_dir = $config->{ source_directory } || $config->{ path };
+    die "Source directory not found: $source_dir" unless -d $source_dir;
+
+    my $pub_dir =
+           $config->{ publication_directory }
+        || $config->{ publication_path }
+        || '.';
+
+    my $do_posts;
+    my $do_notes;
+
+    if ( $opts->{ publish_new } ) {
+        $do_posts = !$opts->{ publish_only_notes };
+        $do_notes = !$opts->{ publish_only_posts };
+    } else {
+        $do_posts =
+               $opts->{ publish_all }
+            || $opts->{ publish_only_posts }
+            || ( !$opts->{ publish_only_posts }
+            && !$opts->{ publish_only_notes } );
+        $do_notes = $opts->{ publish_all } || $opts->{ publish_only_notes };
+    }
+
+    my $posts = [];
+    my $notes = [];
+
+    if ( $do_posts ) {
+        if ( $opts->{ publish_new } ) {
+            $posts = incremental_publish_posts(
+                $config, $tt, $source_dir,
+                $opts->{ force },
+                $opts->{ verbose },
+                $opts->{ dryrun }
+            );
+        } else {
+            $posts = _publish_posts(
+                $config, $tt, $source_dir,
+                $opts->{ verbose },
+                $opts->{ dryrun }
+            );
+        }
+    }
+
+    if ( $do_notes ) {
+        my $notes_dir = $config->{ source_notes_directory }
+            || "$source_dir/notes";
+        if ( $opts->{ publish_new } ) {
+            $notes = incremental_publish_notes(
+                $config, $tt, $notes_dir,
+                $opts->{ force },
+                $opts->{ verbose },
+                $opts->{ dryrun }
+            );
+        } else {
+            $notes = _publish_notes(
+                $config, $tt, $source_dir,
+                $opts->{ verbose },
+                $opts->{ dryrun }
+            );
+        }
+    }
+
+    if ( $opts->{ dryrun } ) {
+        my @pages;
+        push @pages, 'blog.html'         if $do_posts;
+        push @pages, 'archive.html'      if $do_posts;
+        push @pages, 'tags.html'         if $do_posts || $do_notes;
+        push @pages, 'atom.xml'          if $do_posts;
+        push @pages, 'feed.json'         if $do_posts;
+        push @pages, 'notes_roll.html'   if $do_notes;
+        push @pages, 'recent_notes.json' if $do_notes;
+        push @pages, 'css/site.css'      if $do_posts || $do_notes;
+        push @pages, 'js/site.js'        if $do_posts || $do_notes;
+        say "(dryrun) Would regenerate: " . join( ', ', @pages ) if @pages;
+        return;
+    }
+
+    publish_site_css( $config, $tt );
+    publish_site_js( $config, $tt );
+
+    if ( $do_posts ) {
+        if ( $opts->{ publish_new } ) {
+            if ( @$posts ) {
+                my $all_posts = read_all_meta( $config, 'post' );
+                if ( @$all_posts ) {
+                    fill_body_for_top_n( $all_posts, $pub_dir,
+                        $config->{ show_max_posts } || 5 );
+                    publish_front_page( $config, $tt, $all_posts );
+                    publish_archive_page( $config, $tt, $all_posts );
+                    publish_tags_index( $config, $tt, $all_posts,
+                        read_all_meta( $config, 'note' ) );
+                    fill_body_for_posts( $all_posts, $pub_dir );
+                    publish_atom_feed( $config, $tt, $all_posts );
+                    publish_json_feed( $config, $tt, $all_posts );
+                } else {
+                    warn "No meta files found. Run --publish-all first.\n"
+                        if $opts->{ verbose };
+                    publish_front_page( $config, $tt, $posts );
+                    publish_archive_page( $config, $tt, $posts );
+                    publish_tags_index( $config, $tt, $posts, $notes );
+                    publish_atom_feed( $config, $tt, $posts );
+                    publish_json_feed( $config, $tt, $posts );
+                }
+            } else {
+                publish_tags_index( $config, $tt, [], $notes );
+            }
+        } else {
+            publish_front_page( $config, $tt, $posts );
+            publish_archive_page( $config, $tt, $posts );
+            publish_tags_index( $config, $tt, $posts, $notes );
+            publish_atom_feed( $config, $tt, $posts );
+            publish_json_feed( $config, $tt, $posts );
+        }
+    }
+
+    if ( $do_notes ) {
+        if ( $opts->{ publish_new } ) {
+            if ( @$notes ) {
+                my $all_notes = read_all_meta( $config, 'note' );
+                if ( @$all_notes ) {
+                    fill_body_for_posts( $all_notes, $pub_dir );
+                    publish_notes_roll( $config, $tt, $all_notes );
+                    publish_notes_json( $config, $tt, $all_notes );
+                } else {
+                    warn
+                        "No note meta files found. Run --publish-all first.\n"
+                        if $opts->{ verbose };
+                    publish_notes_roll( $config, $tt, $notes );
+                    publish_notes_json( $config, $tt, $notes );
+                }
+            } elsif ( $opts->{ verbose } ) {
+                say "No new notes; skipping roll regeneration.";
+            }
+        } else {
+            publish_notes_roll( $config, $tt, $notes );
+            publish_notes_json( $config, $tt, $notes );
+        }
+    }
+}
+
+sub _publish_posts {
+    my ( $config, $tt, $source_dir, $verbose, $dryrun ) = @_;
+
+    opendir my $dh, $source_dir or die "Cannot read $source_dir: $!";
+    my @files =
+        grep { /\.(?:md|markdown)$/i && -f "$source_dir/$_" } readdir( $dh );
+    closedir $dh;
+
+    my @posts;
+    for my $file ( @files ) {
+        next if $file =~ /^\./;
+        my $source_file = "$source_dir/$file";
+        if ( $dryrun ) {
+            say "(dryrun) Would publish: $file";
+            next;
+        }
+        my $post = eval { publish_post( $source_file, $config, $tt ) };
+        if ( $@ ) {
+            warn "Error publishing $file: $@" if $verbose;
+            next;
+        }
+        push @posts, $post;
+        say "Published: $file" if $verbose;
+    }
+
+    return \@posts;
+}
+
+sub _publish_notes {
+    my ( $config, $tt, $source_dir, $verbose, $dryrun ) = @_;
+
+    my $notes_dir = $config->{ source_notes_directory }
+        || "$source_dir/notes";
+    return [] unless -d $notes_dir;
+
+    opendir my $dh, $notes_dir or die "Cannot read $notes_dir: $!";
+    my @files = grep { /\.(?:txt|md|markdown)$/i && -f "$notes_dir/$_" }
+        readdir( $dh );
+    closedir $dh;
+
+    my @notes;
+    for my $file ( @files ) {
+        next if $file =~ /^\./;
+        my $source_file = "$notes_dir/$file";
+        if ( $dryrun ) {
+            say "(dryrun) Would publish note: $file";
+            next;
+        }
+        my $note = eval { publish_note( $source_file, $config, $tt ) };
+        if ( $@ ) {
+            warn "Error publishing note $file: $@" if $verbose;
+            next;
+        }
+        push @notes, $note;
+        say "Published note: $file" if $verbose;
+    }
+
+    return \@notes;
 }
 
 1;
