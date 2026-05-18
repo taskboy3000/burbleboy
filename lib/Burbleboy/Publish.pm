@@ -284,6 +284,13 @@ sub publish_archive_page {
     return 1;
 }
 
+sub _escape_cdata {
+    my ( $text ) = @_;
+    return '' unless defined $text;
+    $text =~ s/]]>/]]]]><![CDATA[>/g;
+    return $text;
+}
+
 sub publish_atom_feed {
     my ( $config, $tt, $posts ) = @_;
 
@@ -300,18 +307,24 @@ sub publish_atom_feed {
     for my $post ( @sorted ) {
         push @feed_posts,
             {
-            title               => $post->{ title },
+            title               => _escape_cdata( $post->{ title } ),
             uri                 => $post->{ uri },
             published_timestamp => $post->{ date },
             updated_timestamp   => $post->{ date },
-            body                => $post->{ body_html },
+            body                => _escape_cdata( $post->{ body_html } ),
             };
     }
 
     my $output;
     $tt->process(
         'feed.tt',
-        { posts => \@feed_posts, config => $config, timestamp => $timestamp },
+        {   posts        => \@feed_posts,
+            config       => $config,
+            timestamp    => $timestamp,
+            feed_title   => _escape_cdata( $config->{ title } ),
+            feed_author  => _escape_cdata( $config->{ author_name } ),
+            feed_email   => _escape_cdata( $config->{ author_email } ),
+        },
         \$output
     ) or die $tt->error();
 

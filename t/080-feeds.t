@@ -15,14 +15,33 @@ Main();
 exit;
 
 sub Main {
+    test_escape_cdata();
     test_atom_multiple_posts();
     test_atom_zero_posts();
     test_atom_one_post();
+    test_atom_cdata_escaping();
     test_json_multiple_posts();
     test_json_zero_posts();
     test_json_one_post();
     test_json_truncation();
     done_testing();
+}
+
+sub test_escape_cdata {
+    my $got = Burbleboy::Publish::_escape_cdata( undef );
+    is( $got, '', '_escape_cdata(undef) returns empty string' );
+
+    $got = Burbleboy::Publish::_escape_cdata( 'plain text' );
+    is( $got, 'plain text', '_escape_cdata leaves plain text unchanged' );
+
+    $got = Burbleboy::Publish::_escape_cdata( 'a ]]> b' );
+    is( $got, 'a ]]]]><![CDATA[> b',
+        '_escape_cdata splits ]]> across CDATA boundaries' );
+
+    $got = Burbleboy::Publish::_escape_cdata( ']]>x2]]>' );
+    is( $got,
+        ']]]]><![CDATA[>x2]]]]><![CDATA[>',
+        '_escape_cdata handles multiple ]]> sequences' );
 }
 
 sub _write_feed_templates {
@@ -32,22 +51,23 @@ sub _write_feed_templates {
     print $fh <<'EOF';
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
-  <title>[% config.title %]</title>
+  <title><![CDATA[[% feed_title %]]]></title>
   <link href="[% config.base_uri %]/atom.xml" rel="self" />
   <link href="[% config.base_uri %]" />
   <updated>[% timestamp %]</updated>
   <id>[% config.base_uri %]</id>
   <author>
-    <name>[% config.author_name %]</name>
+    <name><![CDATA[[% feed_author %]]]></name>
+    <email><![CDATA[[% feed_email %]]]></email>
   </author>
 [% FOR post IN posts %]
   <entry>
-    <title>[% post.title %]</title>
+    <title type="html"><![CDATA[[% post.title %]]]></title>
     <link href="[% post.uri %]"/>
     <published>[% post.published_timestamp %]</published>
     <updated>[% post.updated_timestamp %]</updated>
     <id>[% post.uri %]</id>
-    <content type="html">[% post.body %]</content>
+    <content type="html"><![CDATA[[% post.body %]]]></content>
   </entry>
 [% END %]
 </feed>
@@ -259,6 +279,54 @@ sub test_json_one_post {
     is( scalar @{ $data->{ items } }, 1, '1 item in JSON feed' );
     is( $data->{ items }[ 0 ]{ title },
         'Post 1', 'single post title in JSON feed' );
+
+    teardown_test_site( $site );
+}
+
+sub test_atom_cdata_escaping {
+    my $site   = setup_test_site();
+    my $config = test_config();
+    $config->{ publication_path } = $site->{ publication_dir };
+    $config->{ title }            = 'My ]]> Blog';
+    $config->{ author_name }      = 'Test ]]> Author';
+    $config->{ author_email }     = 'test@example.com';
+
+    _write_feed_templates( $site->{ tmpdir } );
+
+    my $tt = Template->new(
+        {   INCLUDE_PATH => $site->{ tmpdir },
+            ABSOLUTE     => 1,
+            RELATIVE     => 1,
+        }
+    );
+
+    my $posts = [
+        {   title     => 'Post with ]]> in title',
+            uri       => 'http://example.com/cdata-test.html',
+            date      => '2024-06-01T12:00:00',
+            body_html => '<p>Body with ]]> in it</p>',
+        },
+    ];
+    publish_atom_feed( $config, $tt, $posts );
+
+    open my $fh, '<', "$site->{ publication_dir }/atom.xml"
+        or die "Cannot read atom.xml: $!";
+    my $content = do { local $/; <$fh> };
+    close $fh;
+
+    like( $content, qr/<\?xml/, 'feed is XML after CDATA escaping' );
+    unlike( $content, qr/My \]\]> Blog/,
+        'raw ]]> does not appear unescaped in feed title' );
+    unlike( $content, qr/Body with \]\]> in it/,
+        'raw ]]> does not appear unescaped in feed body' );
+
+    ok( $content =~ /My \]\]\]\]><!\[CDATA\[> Blog/,
+        'feed title has ]]> escaped via CDATA split' );
+
+    my @cdata_opens  = $content =~ /<!\[CDATA\[/g;
+    my @cdata_closes = $content =~ /\]\]>/g;
+    is( scalar @cdata_opens, scalar @cdata_closes,
+        'CDATA open/closes are balanced' );
 
     teardown_test_site( $site );
 }
