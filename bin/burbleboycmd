@@ -23,6 +23,7 @@ sub Main {
         'publish-new'        => \$opts{ publish_new },
         'publish-only-posts' => \$opts{ publish_only_posts },
         'publish-only-notes' => \$opts{ publish_only_notes },
+        'prune'              => \$opts{ prune },
         'init'               => \$opts{ init },
         'show-conf'          => \$opts{ show_conf },
         'force'              => \$opts{ force },
@@ -32,8 +33,8 @@ sub Main {
         'version'            => \$opts{ version },
     ) or do { warn "Try --help for usage.\n"; exit 1; };
 
-    if ( $opts{ help } )   { print usage_text();    exit 0; }
-    if ( $opts{ version } ) { print version_text();  exit 0; }
+    if ( $opts{ help } )    { print usage_text();   exit 0; }
+    if ( $opts{ version } ) { print version_text(); exit 0; }
 
     my $config_file = home_dir() . '/.burbleboy.conf';
 
@@ -47,15 +48,29 @@ sub Main {
         exit 0;
     }
 
-    my $has_action = $opts{ publish_all } || $opts{ publish_new }
-        || $opts{ publish_only_posts } || $opts{ publish_only_notes };
+    my $has_action =
+           $opts{ publish_all }
+        || $opts{ publish_new }
+        || $opts{ publish_only_posts }
+        || $opts{ publish_only_notes }
+        || $opts{ prune };
 
-    unless ($has_action) {
+    unless ( $has_action ) {
         print usage_text();
         exit 0;
     }
 
     my $config = read_config( $config_file );
+
+    if ( $opts{ prune } ) {
+        my $pruned =
+            prune_orphans( $config, $opts{ verbose }, $opts{ dryrun } );
+        if ( $pruned && !$opts{ dryrun } ) {
+            my $tt = _setup_template();
+            regenerate_aggregates( $config, $tt );
+        }
+        exit 0;
+    }
 
     my $lock_fh;
     $lock_fh = get_lock( $config ) unless $opts{ dryrun };
@@ -80,6 +95,8 @@ GETTING STARTED:
     burbleboycmd --init                      # first run: create config + dirs
     burbleboycmd --publish-all               # full site rebuild
     burbleboycmd --publish-new               # incremental (source-mtime based; skips up-to-date)
+    burbleboycmd --prune                     # remove orphans (renamed/deleted sources)
+    burbleboycmd --prune --dryrun --verbose  # preview what would be removed
 
 COMMANDS:
 
@@ -90,6 +107,8 @@ COMMANDS:
 --publish-new            Incremental publish — source mtime > published mtime; skips stale content. Use --force to override.
 --publish-only-posts     Publish only new posts; ignore new notes
 --publish-only-notes     Publish only new notes; ignore new posts
+--prune                  Remove published files whose source no longer exists
+                         (useful after renaming or deleting source files)
 
 OPTIONS:
 
@@ -173,7 +192,7 @@ sub _show_config {
     my @keys = qw(base_uri title author_name author_email source_path
         source_notes_path publication_path show_max_posts site_description
         enable_replies);
-    for my $key (@keys) {
+    for my $key ( @keys ) {
         next unless exists $config->{ $key };
         my $val = $config->{ $key };
         next if ref $val;
@@ -182,8 +201,9 @@ sub _show_config {
 }
 
 sub get_lock {
-    my ($config) = @_;
-    my $pub_dir = $config->{ publication_directory }
+    my ( $config ) = @_;
+    my $pub_dir =
+           $config->{ publication_directory }
         || $config->{ publication_path }
         || home_dir()
         || '/tmp';

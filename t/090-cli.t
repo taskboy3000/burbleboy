@@ -24,6 +24,8 @@ sub Main {
     test_publish_only_notes();
     test_force_flag();
     test_verbose_flag();
+    test_prune_cli_flag();
+    test_prune_help_output();
     test_lock_file_location();
     done_testing();
 }
@@ -81,6 +83,28 @@ sub test_show_conf_without_config {
     like( $output, qr/base_uri/, '--show-conf shows default base_uri' );
 
     teardown_test_site( $site );
+}
+
+sub test_prune_cli_flag {
+    my $site = setup_test_site();
+    _write_config( $site->{ tmpdir } );
+    _replace_in_file( "$site->{ tmpdir }/.burbleboy.conf",
+        'REPLACE_SOURCE', $site->{ source_dir } );
+    _replace_in_file( "$site->{ tmpdir }/.burbleboy.conf",
+        'REPLACE_PUB', $site->{ publication_dir } );
+
+    local $ENV{ HOME } = $site->{ tmpdir };
+
+    my $output = `perl "$FindBin::Bin/../bin/burbleboycmd" --prune 2>&1`;
+    is( $?, 0, '--prune exits 0' ) or diag $output;
+
+    teardown_test_site( $site );
+}
+
+sub test_prune_help_output {
+    my $output = `perl "$FindBin::Bin/../bin/burbleboycmd" --help 2>&1`;
+    is( $?, 0, '--help exits 0' );
+    like( $output, qr/prune/, '--help mentions --prune' );
 }
 
 sub test_lock_file_location {

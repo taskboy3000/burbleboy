@@ -19,6 +19,7 @@ our @EXPORT_OK = qw(
     try_publish write_meta read_all_meta
     extract_body_from_html fill_body_for_posts fill_body_for_top_n
     run_publish _publish_posts _publish_notes
+    prune_orphans regenerate_aggregates
 );
 our %EXPORT_TAGS = ( all => \@EXPORT_OK );
 
@@ -124,6 +125,7 @@ sub publish_note {
     my $note = Burbleboy::Model::Note::parse_note( $source_file, $config );
 
     $note->{ body_html } = sanitize_html( $note->{ body_html } );
+    $note->{ body }      = $note->{ body_html };
 
     write_meta( $note, $config, 'note' );
 
@@ -927,8 +929,6 @@ sub run_publish {
                         $config->{ show_max_posts } || 5 );
                     publish_front_page( $config, $tt, $all_posts );
                     publish_archive_page( $config, $tt, $all_posts );
-                    publish_tags_index( $config, $tt, $all_posts,
-                        read_all_meta( $config, 'note' ) );
                     fill_body_for_posts( $all_posts, $pub_dir );
                     publish_atom_feed( $config, $tt, $all_posts );
                     publish_json_feed( $config, $tt, $all_posts );
@@ -937,17 +937,13 @@ sub run_publish {
                         if $opts->{ verbose };
                     publish_front_page( $config, $tt, $posts );
                     publish_archive_page( $config, $tt, $posts );
-                    publish_tags_index( $config, $tt, $posts, $notes );
                     publish_atom_feed( $config, $tt, $posts );
                     publish_json_feed( $config, $tt, $posts );
                 }
-            } else {
-                publish_tags_index( $config, $tt, [], $notes );
             }
         } else {
             publish_front_page( $config, $tt, $posts );
             publish_archive_page( $config, $tt, $posts );
-            publish_tags_index( $config, $tt, $posts, $notes );
             publish_atom_feed( $config, $tt, $posts );
             publish_json_feed( $config, $tt, $posts );
         }
@@ -975,6 +971,12 @@ sub run_publish {
             publish_notes_roll( $config, $tt, $notes );
             publish_notes_json( $config, $tt, $notes );
         }
+    }
+
+    if ( $do_posts || $do_notes ) {
+        my $all_posts = read_all_meta( $config, 'post' );
+        my $all_notes = read_all_meta( $config, 'note' );
+        publish_tags_index( $config, $tt, $all_posts, $all_notes );
     }
 }
 
@@ -1036,6 +1038,82 @@ sub _publish_notes {
     }
 
     return \@notes;
+}
+
+sub prune_orphans {
+    my ( $config, $verbose, $dryrun ) = @_;
+
+    my $pub_dir =
+           $config->{ publication_directory }
+        || $config->{ publication_path }
+        || '.';
+    my $meta_dir = "$pub_dir/_burbleboy";
+    return 0 unless -d $meta_dir;
+
+    require File::Find;
+    my @meta_files;
+    File::Find::find(
+        sub {
+            return unless /\.meta\.json$/ && -f $_;
+            push @meta_files, $File::Find::name;
+        },
+        $meta_dir
+    );
+
+    require JSON;
+    my $pruned = 0;
+
+    for my $meta_file ( @meta_files ) {
+        my $meta = eval { JSON::decode_json( _slurp( $meta_file ) ) };
+        if ( $@ || !$meta ) {
+            warn "Skipping corrupt meta file: $meta_file\n" if $verbose;
+            next;
+        }
+
+        my $source_file = $meta->{ source_file };
+        next if $source_file && -e $source_file;
+
+        my $html_file = "$pub_dir/$meta->{published_filename}";
+
+        if ( $verbose ) {
+            my $label = $meta->{ title } || $meta->{ published_filename };
+            say "Pruned: $label";
+        }
+
+        unless ( $dryrun ) {
+            unlink $html_file if -e $html_file;
+            unlink $meta_file if -e $meta_file;
+        }
+
+        $pruned++;
+    }
+
+    return $pruned;
+}
+
+sub regenerate_aggregates {
+    my ( $config, $tt ) = @_;
+
+    my $pub_dir =
+           $config->{ publication_directory }
+        || $config->{ publication_path }
+        || '.';
+
+    my $all_posts = read_all_meta( $config, 'post' );
+    fill_body_for_top_n( $all_posts, $pub_dir,
+        $config->{ show_max_posts } || 5 );
+    publish_front_page( $config, $tt, $all_posts );
+    publish_archive_page( $config, $tt, $all_posts );
+    fill_body_for_posts( $all_posts, $pub_dir );
+    publish_atom_feed( $config, $tt, $all_posts );
+    publish_json_feed( $config, $tt, $all_posts );
+
+    my $all_notes = read_all_meta( $config, 'note' );
+    fill_body_for_posts( $all_notes, $pub_dir );
+    publish_notes_roll( $config, $tt, $all_notes );
+    publish_notes_json( $config, $tt, $all_notes );
+
+    publish_tags_index( $config, $tt, $all_posts, $all_notes );
 }
 
 1;

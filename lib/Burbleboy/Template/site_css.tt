@@ -258,7 +258,7 @@ article.post  figure {
 }
 
 .h-entry.note .e-content {
-    white-space: break-spaces;
+    /* white-space: break-spaces; */
     margin-right: 20px;
     padding-bottom: 20px;
     border-bottom: 1px solid #ddd;

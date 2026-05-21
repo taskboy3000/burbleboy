@@ -19,7 +19,7 @@ If you used the original Plerd (or the earlier fork), here is what changed:
 | **Config** | Path::Class objects, URI coercion, Moo attributes | Plain hashref + YAML::XS |
 | **Config key names** | `_path` suffix (e.g. `source_path`) | `_path` → `_directory` mapped automatically |
 | **HTML sanitization** | None | Whitelist-based XSS protection |
-| **CLI flags** | `--init`, `--publish-all`, `--daemon` | `--init`, `--show-conf`, `--publish-all`, `--publish-new`, `--force`, `--verbose`, `--help`, `--version` |
+| **CLI flags** | `--init`, `--publish-all`, `--daemon` | `--init`, `--show-conf`, `--publish-all`, `--publish-new`, `--force`, `--prune`, `--verbose`, `--help`, `--version` |
 | **Incremental mode** | Full rebuild every time | `--publish-new` only processes changed files |
 | **Locking** | None | File lock via `flock` |
 | **Dependencies** | ~18 CPAN modules | 10 modules (no Moo, no ForkManager, no Data::GUID, etc.) |
@@ -205,6 +205,17 @@ bin/burbleboycmd --publish-new
 
 # Force republish even if source hasn't changed
 bin/burbleboycmd --publish-all --force
+
+# Remove orphaned published files (source was renamed or deleted)
+bin/burbleboycmd --prune
+
+# Preview what --prune would remove without deleting anything
+bin/burbleboycmd --prune --dryrun --verbose
+
+# Typical rename workflow:
+#   mv old-name.txt new-name.txt
+#   burbleboycmd --prune          # removes old published file
+#   burbleboycmd --publish-new    # publishes new source file
 
 # Publish only posts or only notes
 bin/burbleboycmd --publish-only-posts

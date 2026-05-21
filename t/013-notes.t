@@ -16,6 +16,7 @@ sub Main {
     test_in_reply_to_parsing();
     test_like_of_parsing();
     test_bare_url_autolinking();
+    test_bare_url_with_trailing_punctuation();
     test_hashtag_conversion();
     test_body_without_links();
     test_body_rendering();
@@ -105,6 +106,28 @@ sub test_bare_url_autolinking {
         $note->{ body_html },
         qr{<a rel="noopener noreferrer" href="https://icanhas.cheezburger.com">},
         'bare URL auto-linked'
+    );
+
+    $cleanup->();
+}
+
+sub test_bare_url_with_trailing_punctuation {
+    my $content = "Check https://example.com. And https://test.com, ok?";
+    my ( $filepath, $cleanup ) =
+        make_temp_note( $content, 'url-punct-note.txt' );
+    my $config = test_config();
+
+    my $note = parse_note( $filepath, $config );
+
+    like(
+        $note->{ body_html },
+        qr{<a rel="noopener noreferrer" href="https://example\.com">https://example\.com</a>\.},
+        'URL with trailing period has period outside anchor'
+    );
+    like(
+        $note->{ body_html },
+        qr{<a rel="noopener noreferrer" href="https://test\.com">https://test\.com</a>,},
+        'URL with trailing comma has comma outside anchor'
     );
 
     $cleanup->();

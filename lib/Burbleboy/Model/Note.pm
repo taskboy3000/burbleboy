@@ -64,12 +64,16 @@ sub parse_note {
         my @words;
         for my $word ( split / /, $line ) {
             if ( $word =~ m!($url_pat)!o ) {
-                my $url = _validate_url( $1 );
+                my $url      = $1;
+                my $trailing = '';
+                $trailing = $1 if $url =~ s/([.,;:!?)\]}>]+)$//;
+                $url      = _validate_url( $url );
                 if ( $url ) {
                     $url  = _escape_html( $url );
                     $word = sprintf(
                         '<a rel="noopener noreferrer" href="%s">%s</a>',
-                        $url, $url );
+                        $url, $url )
+                        . $trailing;
                 }
             } elsif ( $word =~ /^#([\w-]+)/ ) {
                 my $tag = lc( $1 );
