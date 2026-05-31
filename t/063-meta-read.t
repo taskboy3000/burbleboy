@@ -264,6 +264,45 @@ sub test_read_meta_corrupt_file {
     teardown_test_site( $site );
 }
 
+sub test_read_meta_unicode_title {
+    my $site   = setup_test_site();
+    my $config = test_config();
+    $config->{ publication_path } = $site->{ publication_dir };
+
+    my $meta_dir = "$site->{ publication_dir }/_burbleboy";
+    mkdir $meta_dir or die "Cannot create $meta_dir: $!";
+
+    require JSON;
+    my $title = "You think you\x{2019}re SO smart\x{2026}";
+    my $desc  = "em-dash\x{2014}and \x{201C}smart quotes\x{201D}";
+
+    my $meta = {
+        type               => 'post',
+        title              => $title,
+        description        => $desc,
+        date               => '2024-06-15T12:00:00',
+        uri                => 'http://example.com/unicode.html',
+        tags               => [],
+        reading_time       => 1,
+        id                 => 'unicode123',
+        published_filename => 'unicode.html',
+        source_file        => '/tmp/unicode.md',
+    };
+    write_meta( $meta, $config, 'post' );
+
+    open my $fh, '>', "$site->{ publication_dir }/unicode.html"
+        or die "Cannot write unicode.html: $!";
+    print $fh "<html><body>body</body></html>";
+    close $fh;
+
+    my $results = read_all_meta( $config );
+    is( scalar @$results, 1, 'one entry with unicode title returned' );
+    is( $results->[ 0 ]->{ title },       $title, 'title with unicode preserved' );
+    is( $results->[ 0 ]->{ description }, $desc,  'description with unicode preserved' );
+
+    teardown_test_site( $site );
+}
+
 sub test_read_meta_orphan_skipped {
     my $site   = setup_test_site();
     my $config = test_config();
@@ -405,6 +444,7 @@ sub Main {
     test_read_meta_republish();
     test_read_meta_empty_dir();
     test_read_meta_corrupt_file();
+    test_read_meta_unicode_title();
     test_read_meta_orphan_skipped();
     test_read_meta_notes();
     test_read_meta_filter_type();

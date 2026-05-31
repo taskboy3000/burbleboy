@@ -619,7 +619,7 @@ sub incremental_publish_notes {
 
 sub _slurp {
     my ( $file ) = @_;
-    open my $fh, '<:encoding(UTF-8)', $file or return;
+    open my $fh, '<:raw', $file or return;
     local $/;
     my $content = <$fh>;
     close $fh;
