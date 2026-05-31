@@ -757,6 +757,12 @@ sub read_all_meta {
 
         $meta->{ tags } = _expand_tags( $meta->{ tags }, $base_uri );
 
+        unless ( $meta->{ title } ) {
+            require Burbleboy::Model::Note;
+            $meta->{ title } = Burbleboy::Model::Note::make_title( $meta->{ source_file } )
+                if $meta->{ source_file };
+        }
+
         push @results, $meta;
     }
 
