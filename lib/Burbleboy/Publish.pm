@@ -878,7 +878,8 @@ sub run_publish {
             $posts = _publish_posts(
                 $config, $tt, $source_dir,
                 $opts->{ verbose },
-                $opts->{ dryrun }
+                $opts->{ dryrun },
+                $opts->{ force }
             );
         }
     }
@@ -897,7 +898,8 @@ sub run_publish {
             $notes = _publish_notes(
                 $config, $tt, $source_dir,
                 $opts->{ verbose },
-                $opts->{ dryrun }
+                $opts->{ dryrun },
+                $opts->{ force }
             );
         }
     }
@@ -942,10 +944,21 @@ sub run_publish {
                 }
             }
         } else {
-            publish_front_page( $config, $tt, $posts );
-            publish_archive_page( $config, $tt, $posts );
-            publish_atom_feed( $config, $tt, $posts );
-            publish_json_feed( $config, $tt, $posts );
+            my $all_posts = read_all_meta( $config, 'post' );
+            if ( @$all_posts ) {
+                fill_body_for_top_n( $all_posts, $pub_dir,
+                    $config->{ show_max_posts } || 5 );
+                publish_front_page( $config, $tt, $all_posts );
+                publish_archive_page( $config, $tt, $all_posts );
+                fill_body_for_posts( $all_posts, $pub_dir );
+                publish_atom_feed( $config, $tt, $all_posts );
+                publish_json_feed( $config, $tt, $all_posts );
+            } else {
+                publish_front_page( $config, $tt, $posts );
+                publish_archive_page( $config, $tt, $posts );
+                publish_atom_feed( $config, $tt, $posts );
+                publish_json_feed( $config, $tt, $posts );
+            }
         }
     }
 
@@ -968,8 +981,15 @@ sub run_publish {
                 say "No new notes; skipping roll regeneration.";
             }
         } else {
-            publish_notes_roll( $config, $tt, $notes );
-            publish_notes_json( $config, $tt, $notes );
+            my $all_notes = read_all_meta( $config, 'note' );
+            if ( @$all_notes ) {
+                fill_body_for_posts( $all_notes, $pub_dir );
+                publish_notes_roll( $config, $tt, $all_notes );
+                publish_notes_json( $config, $tt, $all_notes );
+            } else {
+                publish_notes_roll( $config, $tt, $notes );
+                publish_notes_json( $config, $tt, $notes );
+            }
         }
     }
 
@@ -981,27 +1001,48 @@ sub run_publish {
 }
 
 sub _publish_posts {
-    my ( $config, $tt, $source_dir, $verbose, $dryrun ) = @_;
+    my ( $config, $tt, $source_dir, $verbose, $dryrun, $force ) = @_;
 
     opendir my $dh, $source_dir or die "Cannot read $source_dir: $!";
     my @files =
         grep { /\.(?:md|markdown)$/i && -f "$source_dir/$_" } readdir( $dh );
     closedir $dh;
 
+    require Burbleboy::Model::Post;
     my @posts;
     for my $file ( @files ) {
         next if $file =~ /^\./;
-        my $source_file = "$source_dir/$file";
-        if ( $dryrun ) {
-            say "(dryrun) Would publish: $file";
+        if ( $file =~ /[[:cntrl:]]/ ) {
+            warn
+                "Skipping $file (corrupt filename: contains control characters)\n";
             next;
         }
-        my $post = eval { publish_post( $source_file, $config, $tt ) };
+        my $source_file = "$source_dir/$file";
+
+        my $post = eval {
+            Burbleboy::Model::Post::parse_post( $source_file, $config );
+        };
+        if ( $@ ) { warn "Skipping $file: $@" if $verbose; next; }
+
+        unless ( $force
+            || needs_update( $source_file, $post->{ publication_file } ) )
+        {
+            say "Skipping $file (up-to-date)" if $verbose;
+            next;
+        }
+
+        if ( $dryrun ) {
+            say "(dryrun) Would publish: $file";
+            push @posts, $post;
+            next;
+        }
+
+        my $result = eval { publish_post( $source_file, $config, $tt ) };
         if ( $@ ) {
             warn "Error publishing $file: $@" if $verbose;
             next;
         }
-        push @posts, $post;
+        push @posts, $result;
         say "Published: $file" if $verbose;
     }
 
@@ -1009,7 +1050,7 @@ sub _publish_posts {
 }
 
 sub _publish_notes {
-    my ( $config, $tt, $source_dir, $verbose, $dryrun ) = @_;
+    my ( $config, $tt, $source_dir, $verbose, $dryrun, $force ) = @_;
 
     my $notes_dir = $config->{ source_notes_directory }
         || "$source_dir/notes";
@@ -1020,20 +1061,45 @@ sub _publish_notes {
         readdir( $dh );
     closedir $dh;
 
+    my $pub_dir =
+           $config->{ publication_directory }
+        || $config->{ publication_path }
+        || '.';
+
+    require Burbleboy::Model::Note;
     my @notes;
     for my $file ( @files ) {
         next if $file =~ /^\./;
-        my $source_file = "$notes_dir/$file";
-        if ( $dryrun ) {
-            say "(dryrun) Would publish note: $file";
+        if ( $file =~ /[[:cntrl:]]/ ) {
+            warn
+                "Skipping note $file (corrupt filename: contains control characters)\n";
             next;
         }
-        my $note = eval { publish_note( $source_file, $config, $tt ) };
+        my $source_file = "$notes_dir/$file";
+
+        my $note = eval {
+            Burbleboy::Model::Note::parse_note( $source_file, $config );
+        };
+        if ( $@ ) { warn "Skipping note $file: $@" if $verbose; next; }
+
+        my $pub_file = $note->{ publication_file };
+        unless ( $force || needs_update( $source_file, $pub_file ) ) {
+            say "Skipping note $file (up-to-date)" if $verbose;
+            next;
+        }
+
+        if ( $dryrun ) {
+            say "(dryrun) Would publish note: $file";
+            push @notes, $note;
+            next;
+        }
+
+        my $result = eval { publish_note( $source_file, $config, $tt ) };
         if ( $@ ) {
             warn "Error publishing note $file: $@" if $verbose;
             next;
         }
-        push @notes, $note;
+        push @notes, $result;
         say "Published note: $file" if $verbose;
     }
 
