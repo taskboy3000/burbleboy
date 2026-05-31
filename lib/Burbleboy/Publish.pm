@@ -803,6 +803,7 @@ sub write_meta {
         $meta->{ published_filename } = $filename;
         $meta->{ source_file }        = $item->{ source_file };
     } else {
+        $meta->{ title }              = $item->{ title };
         $meta->{ date }               = $item->{ date };
         $meta->{ uri }                = $item->{ uri };
         $meta->{ tags }               = $item->{ tags };

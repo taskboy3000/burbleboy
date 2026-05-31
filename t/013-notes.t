@@ -7,7 +7,7 @@ use Test2::V0;
 use File::Temp qw(tempfile);
 use TestHelper qw(test_config);
 
-use Burbleboy::Model::Note qw(parse_note);
+use Burbleboy::Model::Note qw(parse_note make_title);
 
 Main();
 exit;
@@ -23,6 +23,7 @@ sub Main {
     test_empty_body();
     test_url_validation_security();
     test_url_xss_prevention();
+    test_make_title();
     done_testing();
 }
 
@@ -215,4 +216,29 @@ sub test_url_validation_security {
         undef, 'javascript: URL rejected for in_reply_to' );
 
     $cleanup->();
+}
+
+sub test_make_title {
+    is( make_title('2024y01m15d_12h00m00s-fresh-note.txt'),
+        'fresh note', 'datestamp stripped, dashes to spaces' );
+    is( make_title('2024y01m15d_12h00m00s-my_cool_note.txt'),
+        'my cool note', 'datestamp stripped, underscores to spaces' );
+    is( make_title('2024y01m15d_12h00m00s-mixed_style.txt'),
+        'mixed style', 'datestamp stripped, mixed dashes and underscores' );
+    is( make_title('2024y01m15d_12h00m00s-mixed_style.md'),
+        'mixed style', 'handles .md extension' );
+    is( make_title('2024y01m15d_12h00m00s-note.markdown'),
+        'note', 'handles .markdown extension' );
+    is( make_title('plain-note.txt'),
+        'plain note', 'no datestamp, dashes to spaces' );
+    is( make_title('simple_note.txt'),
+        'simple note', 'no datestamp, underscores to spaces' );
+    is( make_title('/path/to/2024y01m15d_12h00m00s-hello-world.txt'),
+        'hello world', 'full path with datestamp' );
+    is( make_title('2024y01m15d_12h00m00s-&-note.txt'),
+        '&amp; note', 'HTML escaping of ampersand in slug' );
+    is( make_title('2024y01m15d_12h00m00s-less<than>.txt'),
+        'less&lt;than&gt;', 'HTML escaping of angle brackets in slug' );
+    is( make_title(undef),
+        undef, 'undef returns undef' );
 }

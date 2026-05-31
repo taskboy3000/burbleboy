@@ -343,6 +343,7 @@ sub test_read_meta_notes {
     mkdir $meta_dir or die "Cannot create $meta_dir: $!";
 
     my $note = {
+        title              => 'my note title',
         date               => 1717344000,
         uri                => 'http://example.com/notes/test.html',
         tags               => [],
@@ -360,9 +361,10 @@ sub test_read_meta_notes {
 
     my $results = read_all_meta( $config, 'note' );
     is( scalar @$results,          1,        'one note returned' );
-    is( $results->[ 0 ]->{ type }, 'note',   'type is note' );
-    is( $results->[ 0 ]->{ id },   'abc123', 'id matches' );
-    is( $results->[ 0 ]->{ body }, '',       'body is empty string' );
+    is( $results->[ 0 ]->{ type },  'note',          'type is note' );
+    is( $results->[ 0 ]->{ id },    'abc123',        'id matches' );
+    is( $results->[ 0 ]->{ body },  '',              'body is empty string' );
+    is( $results->[ 0 ]->{ title }, 'my note title', 'title roundtrips' );
 
     ok( defined $results->[ 0 ]->{ utc_date }, 'utc_date defined for note' );
     isa_ok( $results->[ 0 ]->{ utc_date }, 'DateTime' );

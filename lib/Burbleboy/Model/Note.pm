@@ -7,7 +7,7 @@ use File::Basename qw(basename);
 use File::Spec;
 use Digest::SHA qw(sha1_hex);
 
-our @EXPORT_OK   = qw(parse_note);
+our @EXPORT_OK   = qw(parse_note make_title);
 our %EXPORT_TAGS = ( all => \@EXPORT_OK );
 
 sub parse_note {
@@ -146,9 +146,20 @@ sub _validate_url {
 sub make_title {
     my ( $filename ) = @_;
     return if !$filename;
-    my $basename = basename( $filename, '.txt' );
-    $basename =~ s/_/ /g;
-    return _escape_html( $basename );
+    my $basename = basename( $filename );
+
+    my $datestamp_pat = qr/^\d{4}y\d{2}m\d{2}d_\d{2}h\d{2}m\d{2}s-/;
+    my $stem  = $basename =~ s/\.[^.]+$//r;
+    my $title = $stem =~ s/$datestamp_pat//r;
+
+    $title = $stem if $title eq '';
+
+    $title =~ s/[-_]/ /g;
+    $title =~ s/\s+/ /g;
+    $title =~ s/^\s+//;
+    $title =~ s/\s+$//;
+
+    return _escape_html( $title );
 }
 
 1;
