@@ -7,7 +7,8 @@ use Test2::V0;
 use Template;
 use TestHelper qw(setup_test_site teardown_test_site test_config);
 
-use Burbleboy::Publish qw(publish_front_page publish_archive_page);
+use Burbleboy::Publish qw(publish_front_page publish_archive_page publish_note);
+use Burbleboy::Model::Note qw(parse_note);
 
 Main();
 exit;
@@ -19,6 +20,7 @@ sub Main {
     test_archive_grouped_by_month();
     test_archive_single_post();
     test_archive_no_posts();
+    test_front_page_shows_notes();
     done_testing();
 }
 
@@ -41,7 +43,7 @@ EOF
 [% WRAPPER layout.tt %]
 [% IF posts.size > 0 %]
 [% FOREACH p = posts %]
-<div class="post">[% p.title %] - [% p.date %]</div>
+<div class="post">[% p._type || 'post' %]: [% p.title %] - [% p.date %]</div>
 [% END %]
 [% ELSE %]
 <p class="no-posts">No posts</p>
@@ -294,6 +296,68 @@ sub test_archive_no_posts {
 
     like $content, qr/No archive posts/,
         'archive shows empty state with 0 posts';
+
+    teardown_test_site( $site );
+}
+
+sub test_front_page_shows_notes {
+    my $site   = setup_test_site();
+    my $config = test_config();
+    $config->{ publication_path }      = $site->{ publication_dir };
+    $config->{ publication_directory } = $site->{ publication_dir };
+
+    _write_templates( $site->{ tmpdir } );
+
+    open my $fh, '>', "$site->{ tmpdir }/note.tt"
+        or die "Cannot write note.tt: $!";
+    print $fh <<'EOF';
+[% WRAPPER 'layout.tt' %]
+<div class="note"><!-- POST_BODY_START --><div class="e-content">[% note.body %]</div><!-- POST_BODY_END --></div>
+[% END %]
+EOF
+    close $fh;
+
+    open $fh, '>', "$site->{ tmpdir }/single_post.tt"
+        or die "Cannot write single_post.tt: $!";
+    print $fh <<'EOF';
+[% WRAPPER 'layout.tt' %]
+<article><h1>[% post.title %]</h1><!-- POST_BODY_START --><div class="body e-content">[% post.body %]</div><!-- POST_BODY_END --></article>
+[% END %]
+EOF
+    close $fh;
+
+    my $tt = Template->new(
+        {   INCLUDE_PATH => $site->{ tmpdir },
+            ABSOLUTE     => 1,
+            RELATIVE     => 1,
+        }
+    );
+
+    my $post_source = "$site->{ source_dir }/2024y01m15d_12h00m00s-old-post.md";
+    open $fh, '>', $post_source or die "Cannot write $post_source: $!";
+    print $fh "title: Old Post\n\nOlder content.\n";
+    close $fh;
+
+    my $note_source = "$site->{ source_dir }/old-note.md";
+    open $fh, '>', $note_source or die "Cannot write $note_source: $!";
+    print $fh "This is a more recent note.\n";
+    close $fh;
+
+    require Burbleboy::Publish;
+    Burbleboy::Publish::publish_note( $note_source, $config, $tt );
+    Burbleboy::Publish::publish_post( $post_source, $config, $tt );
+
+    my $all_posts = Burbleboy::Publish::read_all_meta( $config, 'post' );
+    publish_front_page( $config, $tt, $all_posts );
+
+    open $fh, '<', "$site->{ publication_dir }/blog.html" or die;
+    my $content = do { local $/; <$fh> };
+    close $fh;
+
+    like $content, qr/old note/i,
+        'front page shows note in merged stream';
+    like $content, qr/Old Post/i,
+        'front page shows post alongside note';
 
     teardown_test_site( $site );
 }

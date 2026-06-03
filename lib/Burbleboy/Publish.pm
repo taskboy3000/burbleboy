@@ -175,11 +175,16 @@ sub publish_front_page {
     $_->{ _type } = 'note' for @recent;
 
     my @combined = sort {
-        my $da = $b->{ date };
-        my $db = $a->{ date };
-        ( $da =~ /^\d+$/ && $db =~ /^\d+$/ )
-            ? $da <=> $db
-            : $da cmp $db;
+        my $ea = $a->{ utc_date } ? $a->{ utc_date }->epoch : undef;
+        my $eb = $b->{ utc_date } ? $b->{ utc_date }->epoch : undef;
+        if ( defined $ea && defined $eb ) {
+            return $eb <=> $ea;
+        }
+        my $da = $a->{ date };
+        my $db = $b->{ date };
+        ( $db =~ /^\d+$/ && $da =~ /^\d+$/ )
+            ? $db <=> $da
+            : ( $db || '' ) cmp( $da || '' );
     } ( @shown, @recent );
 
     my $total_max = $max;
