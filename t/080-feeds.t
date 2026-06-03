@@ -243,7 +243,7 @@ sub test_json_multiple_posts {
     is( $@,        '',     'JSON feed is valid JSON' );
     is( ref $data, 'HASH', 'JSON feed root is a hash' );
     is( $data->{ version },
-        'https://jsonfeed.org/version/1',
+        'https://jsonfeed.org/version/1.1',
         'JSON feed version set'
     );
     is( ref $data->{ items },           'ARRAY',  'items is an array' );

@@ -376,7 +376,7 @@ sub publish_json_feed {
     }
 
     my $feed = JSON::encode_json(
-        {   version       => 'https://jsonfeed.org/version/1',
+        {   version       => 'https://jsonfeed.org/version/1.1',
             title         => $config->{ title },
             home_page_url => $config->{ base_uri },
             feed_url      => $config->{ base_uri } . '/feed.json',
@@ -444,14 +444,14 @@ sub publish_notes_json {
             url            => $note->{ uri },
             title          => $title,
             content_html   => $note->{ body_html },
-            date_published => $note->{ date },
+            date_published => _rfc3339_note_date( $note ),
             };
     }
 
     my $base_uri = $config->{ base_uri } || 'http://localhost/';
     $base_uri =~ s{/$}{};
     my $feed = JSON::encode_json(
-        {   version       => 'https://jsonfeed.org/version/1',
+        {   version       => 'https://jsonfeed.org/version/1.1',
             title         => $config->{ title } || 'Notes',
             home_page_url => $base_uri,
             feed_url      => $base_uri . '/recent_notes.json',
@@ -1130,6 +1130,19 @@ sub _publish_notes {
     }
 
     return \@notes;
+}
+
+sub _rfc3339_note_date {
+    my ( $note ) = @_;
+    if ( $note->{ utc_date } ) {
+        return $note->{ utc_date }->ymd . 'T'
+            . $note->{ utc_date }->hms
+            . '+00:00';
+    }
+    require DateTime;
+    my $dt =
+        DateTime->from_epoch( epoch => $note->{ date }, time_zone => 'UTC' );
+    return $dt->ymd . 'T' . $dt->hms . '+00:00';
 }
 
 sub _meta_date_cmp {

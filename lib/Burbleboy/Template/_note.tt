@@ -21,9 +21,7 @@
 
 
     </div>
-    <!-- POST_BODY_START -->
-    <div class="e-content">[% note.body %]</div>
-    <!-- POST_BODY_END -->
+    <div class="e-content"><!-- POST_BODY_START -->[% note.body %]<!-- POST_BODY_END --></div>
 
     [% IF note.webmentions_summary_uri %]
     <div class="webmentions">

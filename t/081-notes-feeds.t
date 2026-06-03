@@ -178,7 +178,7 @@ sub test_notes_json_with_notes {
     is( $@,        '',     'notes JSON feed is valid JSON' );
     is( ref $data, 'HASH', 'notes JSON feed root is a hash' );
     is( $data->{ version },
-        'https://jsonfeed.org/version/1',
+        'https://jsonfeed.org/version/1.1',
         'JSON feed version set'
     );
     is( ref $data->{ items },         'ARRAY', 'items is an array' );
@@ -187,6 +187,12 @@ sub test_notes_json_with_notes {
     for my $item ( @{ $data->{ items } } ) {
         ok( exists $item->{ title },        'item has title field' );
         ok( length( $item->{ title } ) > 0, 'title is non-empty' );
+        like( $item->{ date_published },
+            qr/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+00:00$/,
+            'date_published is RFC 3339 string'
+        );
+        unlike( $item->{ content_html }, qr/e-content/,
+            'content_html does not contain template wrapper' );
     }
 
     teardown_test_site( $site );

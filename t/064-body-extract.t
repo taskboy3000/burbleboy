@@ -65,6 +65,18 @@ sub test_extract_body_note {
     is( $body, '<p>Note body</p>', 'note: body extracted from note HTML' );
 }
 
+sub test_extract_body_wrapper_outside {
+    my $dir  = tempdir( CLEANUP => 1 );
+    my $file = _write_html( $dir, 'wrapped.html',
+        '<html><div class="e-content"><!-- POST_BODY_START --><p>Clean</p><!-- POST_BODY_END --></div></html>'
+    );
+    my $body = extract_body_from_html( $file );
+    is( $body, '<p>Clean</p>',
+        'wrapper outside: body extracted without wrapper div' );
+    unlike( $body, qr/e-content/,
+        'wrapper outside: no template wrapper in extracted body' );
+}
+
 sub test_extract_body_file_not_found {
     my $body = extract_body_from_html( '/nonexistent/path.html' );
     is( $body, undef, 'file not found: returns undef' );
@@ -124,6 +136,7 @@ sub Main {
     test_extract_body_no_delimiters_fallback();
     test_extract_body_no_matches();
     test_extract_body_note();
+    test_extract_body_wrapper_outside();
     test_extract_body_file_not_found();
     test_fill_body_for_posts();
     test_fill_body_for_top_n();

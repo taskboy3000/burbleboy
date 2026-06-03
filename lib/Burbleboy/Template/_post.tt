@@ -22,9 +22,7 @@
 
         <div class="post-content ps-3 pe-3">
 
-            <!-- POST_BODY_START -->
-            <div class="body e-content">[%- post.body %]</div>
-            <!-- POST_BODY_END -->
+            <div class="body e-content"><!-- POST_BODY_START -->[%- post.body %]<!-- POST_BODY_END --></div>
 
             <div class="footer">
                 <p>
