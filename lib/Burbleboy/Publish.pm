@@ -659,7 +659,10 @@ sub extract_body_from_html {
     my $html = _slurp( $html_file ) or return undef;
 
     if ( $html =~ m{<!-- POST_BODY_START -->(.*?)<!-- POST_BODY_END -->}s ) {
-        return $1;
+        my $body = $1;
+        $body =~ s{^\s*<div class="(?:body\s+)?e-content">(.*)</div>\s*$}
+                   {$1}s;
+        return $body;
     }
 
     if ( $html =~ m{<div class="body e-content">(.*?)</div>}s ) {

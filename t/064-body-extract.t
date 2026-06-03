@@ -130,6 +130,23 @@ sub test_fill_body_for_top_n {
     is( $posts->[ 2 ]->{ body_html }, '', 'top_n: third post still empty' );
 }
 
+sub test_extract_body_old_format_strips_wrapper {
+    my $dir  = tempdir( CLEANUP => 1 );
+    my $file = _write_html( $dir, 'old-note.html',
+        '<html><!-- POST_BODY_START --><div class="e-content">Note text</div><!-- POST_BODY_END --></html>'
+    );
+    my $body = extract_body_from_html( $file );
+    is( $body, 'Note text',
+        'old format: e-content wrapper stripped from note body' );
+
+    my $file2 = _write_html( $dir, 'old-post.html',
+        '<html><!-- POST_BODY_START --><div class="body e-content"><p>Article</p></div><!-- POST_BODY_END --></html>'
+    );
+    my $body2 = extract_body_from_html( $file2 );
+    is( $body2, '<p>Article</p>',
+        'old format: body e-content wrapper stripped from post body' );
+}
+
 sub Main {
     test_extract_body_delimiters();
     test_extract_body_nested_divs();
@@ -138,6 +155,7 @@ sub Main {
     test_extract_body_note();
     test_extract_body_wrapper_outside();
     test_extract_body_file_not_found();
+    test_extract_body_old_format_strips_wrapper();
     test_fill_body_for_posts();
     test_fill_body_for_top_n();
     done_testing();
