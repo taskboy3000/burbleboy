@@ -1,27 +1,27 @@
 [% WRAPPER layout.tt section_title = "Latest" %]
 
 [% IF posts.size > 0 %]
-    [% FOREACH post = posts %]
-    [% IF post.item_type == 'note' %]
-    <article class="border-start border-warning border-4 ps-3 mb-4 pb-2">
-        <h3 class="note-title fs-6 fw-bold"><a href="[% post.uri %]" class="text-warning">[% post.title %]</a></h3>
-        [% post.body %]
-        <p class="text-muted small mb-0">
-            <time datetime="[% post.date_as_mysql %]">[% post.date_as_mysql %] UTC</time>
-            &middot;
-            <a href="[% post.uri %]" class="text-warning" title="Permalink">&Lscr;</a>
-            &middot;
-            <a href="mailto:[% config.author_email %]" class="text-warning">Reply via email</a>
-        </p>
-    </article>
-    [% ELSE %]
     <ul class="latest-posts list-unstyled">
+    [% FOREACH post = posts %]
         <li>
-            [% INCLUDE "_post.tt" title_hightlight = 1 include_reading_time = 1 %]
+        [% IF post.item_type == 'note' %]
+        <article class="border-start border-warning border-4 ps-3 mb-4 pb-2">
+            <h3 class="note-title fs-6 fw-bold"><a href="[% post.uri %]" class="text-warning">[% post.title %]</a></h3>
+            [% post.body %]
+            <p class="text-muted small mb-0">
+                <time datetime="[% post.date_as_mysql %]">[% post.date_as_mysql %] UTC</time>
+                &middot;
+                <a href="[% post.uri %]" class="text-warning" title="Permalink">&Lscr;</a>
+                &middot;
+                <a href="mailto:[% config.author_email %]" class="text-warning">Reply via email</a>
+            </p>
+        </article>
+        [% ELSE %]
+        [% INCLUDE "_post.tt" title_hightlight = 1 include_reading_time = 1 %]
+        [% END %]
         </li>
+    [% END %]
     </ul>
-    [% END %]
-    [% END %]
 [% ELSE %]
     <em>No posts yet.  Check back later.</em>
 [% END %]

@@ -312,7 +312,9 @@ sub test_front_page_shows_notes {
         or die "Cannot write front_page.tt: $!";
     print $fh <<'EOF';
 [% WRAPPER layout.tt %]
+<ul class="latest-posts">
 [% FOREACH p = posts %]
+<li>
 [% IF p.item_type == 'note' %]
 <h3 class="note-title">[% p.title %]</h3>
 <div class="note-body">[% p.body %]</div>
@@ -320,7 +322,9 @@ sub test_front_page_shows_notes {
 <h3 class="post-title">[% p.title %]</h3>
 <div class="post-body">[% p.body %]</div>
 [% END %]
+</li>
 [% END %]
+</ul>
 [% END %]
 EOF
     close $fh;
