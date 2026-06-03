@@ -145,7 +145,6 @@ sub _parse_date {
         my $dt;
         eval {
             $dt = $parser->parse_datetime( $headers->{ time } );
-            $dt->set_time_zone( 'local' ) if $dt;
         };
         if ( $@ || !$dt ) {
             die
