@@ -308,7 +308,24 @@ sub test_front_page_shows_notes {
 
     _write_templates( $site->{ tmpdir } );
 
-    open my $fh, '>', "$site->{ tmpdir }/note.tt"
+    open my $fh, '>', "$site->{ tmpdir }/front_page.tt"
+        or die "Cannot write front_page.tt: $!";
+    print $fh <<'EOF';
+[% WRAPPER layout.tt %]
+[% FOREACH p = posts %]
+[% IF p.item_type == 'note' %]
+<h3 class="note-title">[% p.title %]</h3>
+<div class="note-body">[% p.body %]</div>
+[% ELSE %]
+<h3 class="post-title">[% p.title %]</h3>
+<div class="post-body">[% p.body %]</div>
+[% END %]
+[% END %]
+[% END %]
+EOF
+    close $fh;
+
+    open $fh, '>', "$site->{ tmpdir }/note.tt"
         or die "Cannot write note.tt: $!";
     print $fh <<'EOF';
 [% WRAPPER 'layout.tt' %]
@@ -354,10 +371,12 @@ EOF
     my $content = do { local $/; <$fh> };
     close $fh;
 
-    like $content, qr/old note/i,
-        'front page shows note in merged stream';
-    like $content, qr/Old Post/i,
-        'front page shows post alongside note';
+    like $content, qr{<h3 class="note-title">old note</h3>},
+        'front page shows note title';
+    like $content, qr{<h3 class="post-title">Old Post</h3>},
+        'front page shows post title';
+    like $content, qr/This is a more recent note/,
+        'note body appears on front page';
     unlike $content, qr{e-content.*e-content}s,
         'note body has no nested e-content divs';
 

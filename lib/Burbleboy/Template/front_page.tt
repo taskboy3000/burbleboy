@@ -4,6 +4,7 @@
     [% FOREACH post = posts %]
     [% IF post.item_type == 'note' %]
     <article class="border-start border-warning border-4 ps-3 mb-4 pb-2">
+        <h3 class="note-title fs-6 fw-bold"><a href="[% post.uri %]" class="text-warning">[% post.title %]</a></h3>
         [% post.body %]
         <p class="text-muted small mb-0">
             <time datetime="[% post.date_as_mysql %]">[% post.date_as_mysql %] UTC</time>
