@@ -766,6 +766,25 @@ sub read_all_meta {
         push @results, $meta;
     }
 
+    my %seen_source;
+    for my $meta ( @results ) {
+        my $key = $meta->{ source_file } || $meta->{ uri };
+        next unless $key;
+        if ( my $existing = $seen_source{ $key } ) {
+            my $d1 = $meta->{ date };
+            my $d2 = $existing->{ date };
+            if ( defined $d1 && defined $d2 ) {
+                if ( $d1 =~ /^\d+$/ && $d2 =~ /^\d+$/ ) {
+                    next unless $d1 > $d2;
+                } else {
+                    next unless $d1 gt $d2;
+                }
+            }
+        }
+        $seen_source{ $key } = $meta;
+    }
+    @results = values %seen_source;
+
     my $date_cmp = sub {
         my ( $x, $y ) = @_;
         return 0 unless defined $x && defined $y;
@@ -1113,6 +1132,29 @@ sub _publish_notes {
     return \@notes;
 }
 
+sub _meta_date_cmp {
+    my ( $a, $b ) = @_;
+    my $da = $a->{ date };
+    my $db = $b->{ date };
+    return 0 unless defined $da && defined $db;
+    if ( $da =~ /^\d+$/ && $db =~ /^\d+$/ ) {
+        return $da <=> $db;
+    }
+    return $da cmp $db;
+}
+
+sub _prune_one {
+    my ( $meta, $meta_file, $html_file, $verbose, $dryrun ) = @_;
+    if ( $verbose ) {
+        my $label = $meta->{ title } || $meta->{ published_filename };
+        say "Pruned: $label";
+    }
+    unless ( $dryrun ) {
+        unlink $html_file if -e $html_file;
+        unlink $meta_file if -e $meta_file;
+    }
+}
+
 sub prune_orphans {
     my ( $config, $verbose, $dryrun ) = @_;
 
@@ -1136,29 +1178,40 @@ sub prune_orphans {
     require JSON;
     my $pruned = 0;
 
+    my %by_source;
     for my $meta_file ( @meta_files ) {
         my $meta = eval { JSON::decode_json( _slurp( $meta_file ) ) };
         if ( $@ || !$meta ) {
             warn "Skipping corrupt meta file: $meta_file\n" if $verbose;
             next;
         }
+        push @{ $by_source{ $meta->{ source_file } || '' } },
+            [ $meta_file, $meta ];
+    }
 
-        my $source_file = $meta->{ source_file };
-        next if $source_file && -e $source_file;
+    for my $source ( keys %by_source ) {
+        my @entries = @{ $by_source{ $source } };
 
-        my $html_file = "$pub_dir/$meta->{published_filename}";
-
-        if ( $verbose ) {
-            my $label = $meta->{ title } || $meta->{ published_filename };
-            say "Pruned: $label";
+        if ( !$source || !-e $source ) {
+            for my $entry ( @entries ) {
+                my ( $meta_file, $meta ) = @$entry;
+                my $html_file = "$pub_dir/$meta->{published_filename}";
+                _prune_one( $meta, $meta_file, $html_file, $verbose,
+                    $dryrun );
+                $pruned++;
+            }
+        } elsif ( @entries > 1 ) {
+            my @sorted = sort { _meta_date_cmp( $b->[1], $a->[1] ) }
+                @entries;
+            my $keep  = shift @sorted;
+            for my $entry ( @sorted ) {
+                my ( $meta_file, $meta ) = @$entry;
+                my $html_file = "$pub_dir/$meta->{published_filename}";
+                _prune_one( $meta, $meta_file, $html_file, $verbose,
+                    $dryrun );
+                $pruned++;
+            }
         }
-
-        unless ( $dryrun ) {
-            unlink $html_file if -e $html_file;
-            unlink $meta_file if -e $meta_file;
-        }
-
-        $pruned++;
     }
 
     return $pruned;

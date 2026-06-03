@@ -417,6 +417,72 @@ sub test_prune_aggregates_note {
     teardown_test_site( $site );
 }
 
+sub test_prune_duplicate_meta_same_source {
+    my $site   = setup_test_site();
+    my $config = test_config();
+    $config->{ publication_path }      = $site->{ publication_dir };
+    $config->{ publication_directory } = $site->{ publication_dir };
+    $config->{ author_name }           = 'Test Author';
+
+    _write_minimal_templates( $site->{ tmpdir } );
+
+    my $tt = Template->new(
+        {   INCLUDE_PATH => $site->{ tmpdir },
+            ABSOLUTE     => 1,
+            RELATIVE     => 1,
+        }
+    );
+
+    my $source = "$site->{ source_dir }/2024y01m15d_12h00m00s-dup-test.md";
+    open my $fh, '>', $source or die "Cannot write $source: $!";
+    print $fh "title: Dup Test Post\n\nBody.\n";
+    close $fh;
+
+    publish_post( $source, $config, $tt );
+
+    my $meta_dir = "$site->{ publication_dir }/_burbleboy";
+
+    require JSON;
+
+    # Create a second meta file for the same source but with older date
+    my $fake_older = {
+        type               => 'post',
+        title              => 'Dup Test Post Older',
+        date               => '2023-06-15T12:00:00',
+        uri                => 'http://example.com/older-dup.html',
+        tags               => [],
+        reading_time       => 1,
+        id                 => 'olderdup999',
+        description        => 'older dup',
+        published_filename => 'older-dup.html',
+        source_file        => $source,
+    };
+    open $fh, '>', "$meta_dir/older-dup.html.meta.json"
+        or die "Cannot write fake older meta: $!";
+    print $fh JSON::encode_json( $fake_older );
+    close $fh;
+    open $fh, '>', "$site->{ publication_dir }/older-dup.html"
+        or die "Cannot write fake older HTML: $!";
+    print $fh "<!-- POST_BODY_START --><div class=\"body e-content\"><p>Old</p></div><!-- POST_BODY_END -->";
+    close $fh;
+
+    # Verify both meta files exist
+    my @before = glob "$meta_dir/*.meta.json";
+    is( scalar @before, 2, 'two meta files before prune duplicates' );
+
+    # Prune should remove the older duplicate, keep the newest
+    my $count = prune_orphans( $config, 0, 0 );
+    is( $count, 1, 'prune_orphans removes one duplicate for same source' );
+
+    my @after = glob "$meta_dir/*.meta.json";
+    is( scalar @after, 1, 'one meta file remains after duplicate prune' );
+
+    ok( !-e "$site->{ publication_dir }/older-dup.html",
+        'older duplicate HTML file removed' );
+
+    teardown_test_site( $site );
+}
+
 sub Main {
     test_prune_basic();
     test_prune_preserves_existing();
@@ -425,5 +491,6 @@ sub Main {
     test_prune_nothing_to_do();
     test_prune_aggregates_post();
     test_prune_aggregates_note();
+    test_prune_duplicate_meta_same_source();
     done_testing();
 }

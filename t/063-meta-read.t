@@ -451,6 +451,7 @@ sub Main {
     test_read_meta_notes();
     test_read_meta_filter_type();
     test_mixed_type_date_sort();
+    test_read_meta_dedup_same_source();
     done_testing();
 }
 
@@ -508,6 +509,70 @@ sub test_mixed_type_date_sort {
         ? $newer > $older
         : "$newer" gt "$older";
     ok( $sorted, 'mixed post/note dates sorted newest-first' );
+
+    teardown_test_site( $site );
+}
+
+sub test_read_meta_dedup_same_source {
+    my $site   = setup_test_site();
+    my $config = test_config();
+    $config->{ publication_path } = $site->{ publication_dir };
+    my $meta_dir = "$site->{ publication_dir }/_burbleboy";
+    mkdir $meta_dir or die "Cannot create $meta_dir: $!";
+
+    require JSON;
+
+    my $common_source = '/tmp/same-source-post.md';
+
+    my $older = {
+        type               => 'post',
+        title              => 'Same Post Title',
+        date               => '2024-01-15T12:00:00',
+        uri                => 'http://example.com/older-timestamp.html',
+        tags               => [],
+        reading_time       => 1,
+        id                 => 'older123',
+        description        => 'older version',
+        published_filename => 'older-timestamp.html',
+        source_file        => $common_source,
+    };
+    open my $fh, '>', "$meta_dir/older-timestamp.html.meta.json"
+        or die "Cannot write older meta: $!";
+    print $fh JSON::encode_json( $older );
+    close $fh;
+    open $fh, '>', "$site->{ publication_dir }/older-timestamp.html"
+        or die "Cannot write older HTML: $!";
+    print $fh "<html><body>Old</body></html>";
+    close $fh;
+
+    my $newer = {
+        type               => 'post',
+        title              => 'Same Post Title Updated',
+        date               => '2024-06-15T12:00:00',
+        uri                => 'http://example.com/newer-timestamp.html',
+        tags               => [],
+        reading_time       => 1,
+        id                 => 'newer456',
+        description        => 'newer version',
+        published_filename => 'newer-timestamp.html',
+        source_file        => $common_source,
+    };
+    open $fh, '>', "$meta_dir/newer-timestamp.html.meta.json"
+        or die "Cannot write newer meta: $!";
+    print $fh JSON::encode_json( $newer );
+    close $fh;
+    open $fh, '>', "$site->{ publication_dir }/newer-timestamp.html"
+        or die "Cannot write newer HTML: $!";
+    print $fh "<html><body>New</body></html>";
+    close $fh;
+
+    my $results = read_all_meta( $config );
+    is( scalar @$results, 1,
+        'dedup: one entry when multiple meta share same source_file' );
+    is( $results->[ 0 ]->{ title }, 'Same Post Title Updated',
+        'dedup: newest entry kept' );
+    is( $results->[ 0 ]->{ id }, 'newer456',
+        'dedup: correct entry retained' );
 
     teardown_test_site( $site );
 }
