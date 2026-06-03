@@ -154,28 +154,51 @@ sub publish_note {
 sub publish_front_page {
     my ( $config, $tt, $posts ) = @_;
 
+    my $pub_dir =
+           $config->{ publication_directory }
+        || $config->{ publication_path }
+        || '.';
+
     $posts //= [];
     my @sorted = sort { $b->{ date } cmp $a->{ date } } @$posts;
     my $max    = $config->{ show_max_posts } || 5;
     my @shown  = @sorted > $max ? @sorted[ 0 .. $max - 1 ] : @sorted;
+
+    my $all_notes = read_all_meta( $config, 'note' );
+    my @notes     = sort { $b->{ date } <=> $a->{ date } } @$all_notes;
+    my $max_notes = $config->{ show_max_posts } || 3;
+    my @recent    = @notes > $max_notes ? @notes[ 0 .. $max_notes - 1 ]
+        : @notes;
+    fill_body_for_posts( \@recent, $pub_dir );
+
+    $_->{ _type } = 'post' for @shown;
+    $_->{ _type } = 'note' for @recent;
+
+    my @combined = sort {
+        my $da = $b->{ date };
+        my $db = $a->{ date };
+        ( $da =~ /^\d+$/ && $db =~ /^\d+$/ )
+            ? $da <=> $db
+            : $da cmp $db;
+    } ( @shown, @recent );
+
+    my $total_max = $max;
+    @combined = splice( @combined, 0, $total_max )
+        if @combined > $total_max;
 
     my $output;
     my $stash = _build_template_stash( $config );
     $tt->process(
         'front_page.tt',
         {   %$stash,
-            posts         => \@shown,
+            posts         => \@combined,
             config        => $config,
-            section_title => 'Latest Articles',
+            section_title => 'Latest',
             activeSection => 'blog',
         },
         \$output
     ) or die $tt->error();
 
-    my $pub_dir =
-           $config->{ publication_directory }
-        || $config->{ publication_path }
-        || '.';
     open my $fh, '>:utf8', "$pub_dir/blog.html"
         or die "Cannot write blog.html: $!";
     print $fh $output;
