@@ -29,6 +29,8 @@
         <div class="display collapse" data-display-uri="[% note.webmentions_display_uri %]"><small>loading...</small></div>
     </div>
     [% END %]
-    
+
+    <p class="reply small text-muted">Reply via <a href="mailto:[% config.author_email %]">email</a>.</p>
+
 </div>
 
