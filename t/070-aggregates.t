@@ -43,7 +43,7 @@ EOF
 [% WRAPPER layout.tt %]
 [% IF posts.size > 0 %]
 [% FOREACH p = posts %]
-<div class="post">[% p._type || 'post' %]: [% p.title %] - [% p.date %]</div>
+<div class="post">[% p.item_type || 'post' %]: [% p.title %] - [% p.date %]</div>
 [% END %]
 [% ELSE %]
 <p class="no-posts">No posts</p>

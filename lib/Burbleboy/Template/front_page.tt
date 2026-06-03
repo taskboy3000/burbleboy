@@ -2,7 +2,7 @@
 
 [% IF posts.size > 0 %]
     [% FOREACH post = posts %]
-    [% IF post._type == 'note' %]
+    [% IF post.item_type == 'note' %]
     <article class="border-start border-warning border-4 ps-3 mb-4 pb-2">
         <div class="e-content small">[% post.body %]</div>
         <p class="text-muted small mb-0">

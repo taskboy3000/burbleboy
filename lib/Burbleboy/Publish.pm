@@ -171,8 +171,8 @@ sub publish_front_page {
         : @notes;
     fill_body_for_posts( \@recent, $pub_dir );
 
-    $_->{ _type } = 'post' for @shown;
-    $_->{ _type } = 'note' for @recent;
+    $_->{ item_type } = 'post' for @shown;
+    $_->{ item_type } = 'note' for @recent;
 
     my @combined = sort {
         my $ea = $a->{ utc_date } ? $a->{ utc_date }->epoch : undef;
