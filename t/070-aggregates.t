@@ -312,7 +312,7 @@ sub test_front_page_shows_notes {
         or die "Cannot write note.tt: $!";
     print $fh <<'EOF';
 [% WRAPPER 'layout.tt' %]
-<div class="note"><!-- POST_BODY_START --><div class="e-content">[% note.body %]</div><!-- POST_BODY_END --></div>
+<div class="note"><div class="e-content"><!-- POST_BODY_START -->[% note.body %]<!-- POST_BODY_END --></div></div>
 [% END %]
 EOF
     close $fh;
@@ -321,7 +321,7 @@ EOF
         or die "Cannot write single_post.tt: $!";
     print $fh <<'EOF';
 [% WRAPPER 'layout.tt' %]
-<article><h1>[% post.title %]</h1><!-- POST_BODY_START --><div class="body e-content">[% post.body %]</div><!-- POST_BODY_END --></article>
+<article><h1>[% post.title %]</h1><div class="body e-content"><!-- POST_BODY_START -->[% post.body %]<!-- POST_BODY_END --></div></article>
 [% END %]
 EOF
     close $fh;
@@ -358,6 +358,8 @@ EOF
         'front page shows note in merged stream';
     like $content, qr/Old Post/i,
         'front page shows post alongside note';
+    unlike $content, qr{e-content.*e-content}s,
+        'note body has no nested e-content divs';
 
     teardown_test_site( $site );
 }
