@@ -267,10 +267,12 @@ sub test_meta_note_fields {
     ok( defined $meta->{ published_filename },
         'note meta published_filename defined'
     );
-    ok( defined $meta->{ date }, 'note meta date defined' );
+    ok( defined $meta->{ date },  'note meta date defined' );
     ok( defined $meta->{ title }, 'note meta title defined' );
-    is( $meta->{ title }, 'fresh note',
-        'note meta title from filename (datestamp stripped, underscores/dashes -> spaces)' );
+    is( $meta->{ title },
+        'fresh note',
+        'note meta title from filename (datestamp stripped, underscores/dashes -> spaces)'
+    );
 
     teardown_test_site( $site );
 }

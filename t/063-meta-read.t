@@ -297,8 +297,9 @@ sub test_read_meta_unicode_title {
 
     my $results = read_all_meta( $config );
     is( scalar @$results, 1, 'one entry with unicode title returned' );
-    is( $results->[ 0 ]->{ title },       $title, 'title with unicode preserved' );
-    is( $results->[ 0 ]->{ description }, $desc,  'description with unicode preserved' );
+    is( $results->[ 0 ]->{ title }, $title, 'title with unicode preserved' );
+    is( $results->[ 0 ]->{ description },
+        $desc, 'description with unicode preserved' );
 
     teardown_test_site( $site );
 }
@@ -360,7 +361,7 @@ sub test_read_meta_notes {
     close $fh;
 
     my $results = read_all_meta( $config, 'note' );
-    is( scalar @$results,          1,        'one note returned' );
+    is( scalar @$results,           1,               'one note returned' );
     is( $results->[ 0 ]->{ type },  'note',          'type is note' );
     is( $results->[ 0 ]->{ id },    'abc123',        'id matches' );
     is( $results->[ 0 ]->{ body },  '',              'body is empty string' );
@@ -567,10 +568,12 @@ sub test_read_meta_dedup_same_source {
     close $fh;
 
     my $results = read_all_meta( $config );
-    is( scalar @$results, 1,
-        'dedup: one entry when multiple meta share same source_file' );
-    is( $results->[ 0 ]->{ title }, 'Same Post Title Updated',
-        'dedup: newest entry kept' );
+    is( scalar @$results,
+        1, 'dedup: one entry when multiple meta share same source_file' );
+    is( $results->[ 0 ]->{ title },
+        'Same Post Title Updated',
+        'dedup: newest entry kept'
+    );
     is( $results->[ 0 ]->{ id }, 'newer456',
         'dedup: correct entry retained' );
 

@@ -65,18 +65,17 @@ sub parse_post {
     my $parser = DateTime::Format::W3CDTF->new;
     my $dt     = $parser->parse_datetime( $post->{ date } );
     $dt->set_time_zone( 'UTC' );
-    $post->{ utc_date }   = $dt;
-    $post->{ year }       = $dt->year;
-    $post->{ month }      = sprintf( '%02d', $dt->month );
-    $post->{ month_name } = $dt->month_name;
-    $post->{ day }        = sprintf( '%02d', $dt->day );
-    $post->{ pretty_pub_date } = sprintf("%04d-%02d-%02d %02d:%02d:%02d",
-        $post->{year},
-        $post->{month},
-        $post->{day},
-        $dt->hour,
-        $dt->minute,
-        $dt->second       
+    $post->{ utc_date }        = $dt;
+    $post->{ year }            = $dt->year;
+    $post->{ month }           = sprintf( '%02d', $dt->month );
+    $post->{ month_name }      = $dt->month_name;
+    $post->{ day }             = sprintf( '%02d', $dt->day );
+    $post->{ pretty_pub_date } = sprintf(
+        "%04d-%02d-%02d %02d:%02d:%02d",
+        $post->{ year },
+        $post->{ month },
+        $post->{ day },
+        $dt->hour, $dt->minute, $dt->second
     );
 
     return $post;
@@ -151,9 +150,7 @@ sub _parse_date {
     if ( exists $headers->{ time } && $headers->{ time } ) {
         my $parser = DateTime::Format::W3CDTF->new;
         my $dt;
-        eval {
-            $dt = $parser->parse_datetime( $headers->{ time } );
-        };
+        eval { $dt = $parser->parse_datetime( $headers->{ time } ); };
         if ( $@ || !$dt ) {
             die
                 "Error processing $source_file: The 'time' attribute is not in W3C format.\n";

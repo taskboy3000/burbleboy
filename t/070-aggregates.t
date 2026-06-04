@@ -7,7 +7,8 @@ use Test2::V0;
 use Template;
 use TestHelper qw(setup_test_site teardown_test_site test_config);
 
-use Burbleboy::Publish qw(publish_front_page publish_archive_page publish_note);
+use Burbleboy::Publish
+    qw(publish_front_page publish_archive_page publish_note);
 use Burbleboy::Model::Note qw(parse_note);
 
 Main();
@@ -354,7 +355,8 @@ EOF
         }
     );
 
-    my $post_source = "$site->{ source_dir }/2024y01m15d_12h00m00s-old-post.md";
+    my $post_source =
+        "$site->{ source_dir }/2024y01m15d_12h00m00s-old-post.md";
     open $fh, '>', $post_source or die "Cannot write $post_source: $!";
     print $fh "title: Old Post\n\nOlder content.\n";
     close $fh;

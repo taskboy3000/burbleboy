@@ -463,7 +463,8 @@ sub test_prune_duplicate_meta_same_source {
     close $fh;
     open $fh, '>', "$site->{ publication_dir }/older-dup.html"
         or die "Cannot write fake older HTML: $!";
-    print $fh "<!-- POST_BODY_START --><div class=\"body e-content\"><p>Old</p></div><!-- POST_BODY_END -->";
+    print $fh
+        "<!-- POST_BODY_START --><div class=\"body e-content\"><p>Old</p></div><!-- POST_BODY_END -->";
     close $fh;
 
     # Verify both meta files exist

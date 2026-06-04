@@ -149,8 +149,8 @@ sub make_title {
     my $basename = basename( $filename );
 
     my $datestamp_pat = qr/^\d{4}y\d{2}m\d{2}d_\d{2}h\d{2}m\d{2}s-/;
-    my $stem  = $basename =~ s/\.[^.]+$//r;
-    my $title = $stem =~ s/$datestamp_pat//r;
+    my $stem          = $basename =~ s/\.[^.]+$//r;
+    my $title         = $stem     =~ s/$datestamp_pat//r;
 
     $title = $stem if $title eq '';
 

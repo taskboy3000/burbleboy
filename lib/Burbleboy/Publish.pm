@@ -167,7 +167,9 @@ sub publish_front_page {
     my $all_notes = read_all_meta( $config, 'note' );
     my @notes     = sort { $b->{ date } <=> $a->{ date } } @$all_notes;
     my $max_notes = $config->{ show_max_posts } || 3;
-    my @recent    = @notes > $max_notes ? @notes[ 0 .. $max_notes - 1 ]
+    my @recent =
+          @notes > $max_notes
+        ? @notes[ 0 .. $max_notes - 1 ]
         : @notes;
     fill_body_for_posts( \@recent, $pub_dir );
 
@@ -790,7 +792,8 @@ sub read_all_meta {
 
         unless ( $meta->{ title } ) {
             require Burbleboy::Model::Note;
-            $meta->{ title } = Burbleboy::Model::Note::make_title( $meta->{ source_file } )
+            $meta->{ title } =
+                Burbleboy::Model::Note::make_title( $meta->{ source_file } )
                 if $meta->{ source_file };
         }
 
@@ -1166,7 +1169,8 @@ sub _publish_notes {
 sub _rfc3339_note_date {
     my ( $note ) = @_;
     if ( $note->{ utc_date } ) {
-        return $note->{ utc_date }->ymd . 'T'
+        return
+              $note->{ utc_date }->ymd . 'T'
             . $note->{ utc_date }->hms
             . '+00:00';
     }
@@ -1245,9 +1249,9 @@ sub prune_orphans {
                 $pruned++;
             }
         } elsif ( @entries > 1 ) {
-            my @sorted = sort { _meta_date_cmp( $b->[1], $a->[1] ) }
-                @entries;
-            my $keep  = shift @sorted;
+            my @sorted =
+                sort { _meta_date_cmp( $b->[ 1 ], $a->[ 1 ] ) } @entries;
+            my $keep = shift @sorted;
             for my $entry ( @sorted ) {
                 my ( $meta_file, $meta ) = @$entry;
                 my $html_file = "$pub_dir/$meta->{published_filename}";

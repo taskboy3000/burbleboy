@@ -141,8 +141,8 @@ sub test_publish_all_posts_skip_unchanged {
     $config->{ publication_path } = $site->{ publication_dir };
     $config->{ site_name }        = 'Test';
     _write_minimal_templates( $site->{ tmpdir } );
-    my $tt = Template->new(
-        { INCLUDE_PATH => $site->{ tmpdir }, ABSOLUTE => 1 } );
+    my $tt =
+        Template->new( { INCLUDE_PATH => $site->{ tmpdir }, ABSOLUTE => 1 } );
 
     my $source = "$site->{ source_dir }/2024y01m15d_12h00m00s-skip.md";
     open my $fh, '>', $source or die "Cannot write source: $!";
@@ -157,12 +157,9 @@ sub test_publish_all_posts_skip_unchanged {
 
     utime( time - 200, time - 200, $source );
 
-    my $result =
-        _publish_posts( $config, $tt, $site->{ source_dir } );
+    my $result = _publish_posts( $config, $tt, $site->{ source_dir } );
     is( scalar @$result,
-        0,
-        '_publish_posts skips file when source older than output'
-    );
+        0, '_publish_posts skips file when source older than output' );
 
     teardown_test_site( $site );
 }
@@ -171,24 +168,23 @@ sub test_publish_all_posts_publish_new {
     my $site   = setup_test_site();
     my $config = test_config();
     $config->{ publication_path } = $site->{ publication_dir };
-    $config->{ site_name }             = 'Test';
+    $config->{ site_name }        = 'Test';
     _write_minimal_templates( $site->{ tmpdir } );
-    my $tt = Template->new(
-        { INCLUDE_PATH => $site->{ tmpdir }, ABSOLUTE => 1 } );
+    my $tt =
+        Template->new( { INCLUDE_PATH => $site->{ tmpdir }, ABSOLUTE => 1 } );
 
     my $source = "$site->{ source_dir }/2024y02m10d_08h30m00s-new.md";
     open my $fh, '>', $source or die "Cannot write source: $!";
     print $fh "title: New Post\n\nContent.\n";
     close $fh;
 
-    my $result =
-        _publish_posts( $config, $tt, $site->{ source_dir } );
-    is( scalar @$result,         1, 'new file: one post published' );
-    is( $result->[ 0 ]{ title }, 'New Post',
-        'new file: correct title' );
+    my $result = _publish_posts( $config, $tt, $site->{ source_dir } );
+    is( scalar @$result,         1,          'new file: one post published' );
+    is( $result->[ 0 ]{ title }, 'New Post', 'new file: correct title' );
 
     ok( -e $result->[ 0 ]{ publication_file },
-        'new file: output file exists' );
+        'new file: output file exists'
+    );
 
     teardown_test_site( $site );
 }
@@ -197,10 +193,10 @@ sub test_publish_all_posts_publish_newer {
     my $site   = setup_test_site();
     my $config = test_config();
     $config->{ publication_path } = $site->{ publication_dir };
-    $config->{ site_name }             = 'Test';
+    $config->{ site_name }        = 'Test';
     _write_minimal_templates( $site->{ tmpdir } );
-    my $tt = Template->new(
-        { INCLUDE_PATH => $site->{ tmpdir }, ABSOLUTE => 1 } );
+    my $tt =
+        Template->new( { INCLUDE_PATH => $site->{ tmpdir }, ABSOLUTE => 1 } );
 
     my $source = "$site->{ source_dir }/2024y03m20d_14h15m00s-upd.md";
     open my $fh, '>', $source or die "Cannot write source: $!";
@@ -215,8 +211,7 @@ sub test_publish_all_posts_publish_newer {
     print $fh "title: Updated\n\nNew content.\n";
     close $fh;
 
-    my $result =
-        _publish_posts( $config, $tt, $site->{ source_dir } );
+    my $result = _publish_posts( $config, $tt, $site->{ source_dir } );
     is( scalar @$result, 1, 'source newer: post republished' );
 
     teardown_test_site( $site );
@@ -226,12 +221,12 @@ sub test_publish_all_meta_not_rewritten {
     my $site   = setup_test_site();
     my $config = test_config();
     $config->{ publication_path } = $site->{ publication_dir };
-    $config->{ site_name }             = 'Test';
-    $config->{ source_directory }      = $site->{ source_dir };
-    $config->{ base_uri }              = 'http://example.com';
+    $config->{ site_name }        = 'Test';
+    $config->{ source_directory } = $site->{ source_dir };
+    $config->{ base_uri }         = 'http://example.com';
     _write_minimal_templates( $site->{ tmpdir } );
-    my $tt = Template->new(
-        { INCLUDE_PATH => $site->{ tmpdir }, ABSOLUTE => 1 } );
+    my $tt =
+        Template->new( { INCLUDE_PATH => $site->{ tmpdir }, ABSOLUTE => 1 } );
 
     my $source = "$site->{ source_dir }/2024y04m05d_09h00m00s-meta.md";
     open my $fh, '>', $source or die "Cannot write source: $!";
@@ -258,17 +253,19 @@ sub test_publish_all_meta_not_rewritten {
 
     ok( -e $meta_file, 'meta file still exists after second publish-all' );
 
-    my @meta_stat_after = stat( $meta_file );
+    my @meta_stat_after  = stat( $meta_file );
     my $meta_mtime_after = $meta_stat_after[ 9 ];
 
     is( $meta_mtime_after, $meta_mtime_before,
         'meta file mtime unchanged when no source changed' );
 
-    my @html_stat_after = stat( $html_file );
+    my @html_stat_after  = stat( $html_file );
     my $html_mtime_after = $html_stat_after[ 9 ];
 
-    is( $html_mtime_after, $html_stat_before[ 9 ],
-        'HTML file mtime unchanged when no source changed' );
+    is( $html_mtime_after,
+        $html_stat_before[ 9 ],
+        'HTML file mtime unchanged when no source changed'
+    );
 
     teardown_test_site( $site );
 }
@@ -277,12 +274,12 @@ sub test_publish_all_aggregates_always_regenerated {
     my $site   = setup_test_site();
     my $config = test_config();
     $config->{ publication_path } = $site->{ publication_dir };
-    $config->{ site_name }             = 'Test';
-    $config->{ source_directory }      = $site->{ source_dir };
-    $config->{ base_uri }              = 'http://example.com';
+    $config->{ site_name }        = 'Test';
+    $config->{ source_directory } = $site->{ source_dir };
+    $config->{ base_uri }         = 'http://example.com';
     _write_minimal_templates( $site->{ tmpdir } );
-    my $tt = Template->new(
-        { INCLUDE_PATH => $site->{ tmpdir }, ABSOLUTE => 1 } );
+    my $tt =
+        Template->new( { INCLUDE_PATH => $site->{ tmpdir }, ABSOLUTE => 1 } );
 
     my $source = "$site->{ source_dir }/2024y05m10d_11h00m00s-agg.md";
     open my $fh, '>', $source or die "Cannot write source: $!";
@@ -311,10 +308,8 @@ sub test_publish_all_aggregates_always_regenerated {
 
     ok( -e "$site->{ publication_dir }/archive.html",
         'archive.html still exists' );
-    ok( -e "$site->{ publication_dir }/atom.xml",
-        'atom.xml still exists' );
-    ok( -e "$site->{ publication_dir }/feed.json",
-        'feed.json still exists' );
+    ok( -e "$site->{ publication_dir }/atom.xml",  'atom.xml still exists' );
+    ok( -e "$site->{ publication_dir }/feed.json", 'feed.json still exists' );
 
     teardown_test_site( $site );
 }
@@ -323,10 +318,10 @@ sub test_publish_all_force_republishes {
     my $site   = setup_test_site();
     my $config = test_config();
     $config->{ publication_path } = $site->{ publication_dir };
-    $config->{ site_name }             = 'Test';
+    $config->{ site_name }        = 'Test';
     _write_minimal_templates( $site->{ tmpdir } );
-    my $tt = Template->new(
-        { INCLUDE_PATH => $site->{ tmpdir }, ABSOLUTE => 1 } );
+    my $tt =
+        Template->new( { INCLUDE_PATH => $site->{ tmpdir }, ABSOLUTE => 1 } );
 
     my $source = "$site->{ source_dir }/2024y06m01d_10h00m00s-force.md";
     open my $fh, '>', $source or die "Cannot write source: $!";
@@ -341,10 +336,8 @@ sub test_publish_all_force_republishes {
 
     utime( time - 300, time - 300, $source );
 
-    my $result = _publish_posts(
-        $config, $tt, $site->{ source_dir },
-        undef, undef, 1
-    );
+    my $result = _publish_posts( $config, $tt, $site->{ source_dir },
+        undef, undef, 1 );
     is( scalar @$result, 1, 'force: publishes even with older source' );
 
     teardown_test_site( $site );
@@ -354,10 +347,10 @@ sub test_publish_all_notes_skip_unchanged {
     my $site   = setup_test_site();
     my $config = test_config();
     $config->{ publication_path } = $site->{ publication_dir };
-    $config->{ site_name }             = 'Test';
+    $config->{ site_name }        = 'Test';
     _write_minimal_templates( $site->{ tmpdir } );
-    my $tt = Template->new(
-        { INCLUDE_PATH => $site->{ tmpdir }, ABSOLUTE => 1 } );
+    my $tt =
+        Template->new( { INCLUDE_PATH => $site->{ tmpdir }, ABSOLUTE => 1 } );
 
     my $notes_dir = "$site->{ source_dir }/notes";
     mkdir $notes_dir or die "Cannot create $notes_dir: $!";
@@ -375,12 +368,9 @@ sub test_publish_all_notes_skip_unchanged {
 
     utime( time - 200, time - 200, $source );
 
-    my $result =
-        _publish_notes( $config, $tt, $site->{ source_dir } );
+    my $result = _publish_notes( $config, $tt, $site->{ source_dir } );
     is( scalar @$result,
-        0,
-        '_publish_notes skips note when source older than output'
-    );
+        0, '_publish_notes skips note when source older than output' );
 
     teardown_test_site( $site );
 }
@@ -389,10 +379,10 @@ sub test_publish_all_posts_dryrun {
     my $site   = setup_test_site();
     my $config = test_config();
     $config->{ publication_path } = $site->{ publication_dir };
-    $config->{ site_name }             = 'Test';
+    $config->{ site_name }        = 'Test';
     _write_minimal_templates( $site->{ tmpdir } );
-    my $tt = Template->new(
-        { INCLUDE_PATH => $site->{ tmpdir }, ABSOLUTE => 1 } );
+    my $tt =
+        Template->new( { INCLUDE_PATH => $site->{ tmpdir }, ABSOLUTE => 1 } );
 
     my $source = "$site->{ source_dir }/2024y07m01d_12h00m00s-dry.md";
     open my $fh, '>', $source or die "Cannot write source: $!";
@@ -405,7 +395,7 @@ sub test_publish_all_posts_dryrun {
     is( scalar @$result, 1, 'dryrun: returns parsed posts' );
 
     my $html = "$site->{ publication_dir }/2024y07m01d_12h00m00s-dry.html";
-    ok( !-e $html, 'dryrun: no file written' );
+    ok( !-e $html,  'dryrun: no file written' );
     ok( -e $source, 'dryrun: source file still present' );
 
     teardown_test_site( $site );
