@@ -1,7 +1,7 @@
 [% WRAPPER layout.tt section_title = "Latest" %]
 
 [% IF posts.size > 0 %]
-    <ul class="latest-posts list-unstyled mt-3">
+    <ul class="latest-posts list-unstyled" style="margin-top:10px">
     [% FOREACH post = posts %]
         <li>
         [% IF post.item_type == 'note' %]
