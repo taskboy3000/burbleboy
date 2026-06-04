@@ -1,20 +1,29 @@
 [% WRAPPER layout.tt section_title = "Latest" %]
 
 [% IF posts.size > 0 %]
-    <ul class="latest-posts list-unstyled">
+    <ul class="latest-posts list-unstyled mt-3">
     [% FOREACH post = posts %]
         <li>
         [% IF post.item_type == 'note' %]
-        <article class="border-start border-warning border-4 ps-3 mb-4 pb-2">
-            <h3 class="note-title fs-6 fw-bold"><a href="[% post.uri %]" class="text-warning">[% post.title %]</a></h3>
-            [% post.body %]
-            <p class="text-muted small mb-0">
-                <time datetime="[% post.date_as_mysql %]">[% post.date_as_mysql %] UTC</time>
-                &middot;
-                <a href="[% post.uri %]" class="text-warning" title="Permalink">&Lscr;</a>
-                &middot;
-                <a href="mailto:[% config.author_email %]" class="text-warning">Reply via email</a>
-            </p>
+        <article class="note mb-4" title="A note">
+            <h2 class="note-title fw-bold bg-warning px-3 py-2 text-center">
+                <a href="[% post.uri %]" class="text-light text-shadow">[% post.title %]</a>
+            </h2>
+            <div class="note-body px-3">
+                [% post.body %]
+            </div>
+            <div class="note-footer text-muted mt-3 mb-0 px-3 small row">
+                <div class="col-6">
+                    <a href="mailto:[% config.author_email %]" class="text-warning">
+                        &dagger; Reply via email
+                    </a>
+                </div>
+                <div class="col-6 text-end">
+                    <time datetime="[% post.date_as_mysql %]">[% post.date_as_mysql %] UTC</time>
+                    &middot;
+                    <a href="[% post.uri %]" class="text-warning fs-h4" title="Permalink">&Lscr;</a>
+                </div>
+            </div>
         </article>
         [% ELSE %]
         [% INCLUDE "_post.tt" title_hightlight = 1 include_reading_time = 1 %]

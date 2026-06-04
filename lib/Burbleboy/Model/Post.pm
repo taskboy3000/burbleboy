@@ -70,6 +70,14 @@ sub parse_post {
     $post->{ month }      = sprintf( '%02d', $dt->month );
     $post->{ month_name } = $dt->month_name;
     $post->{ day }        = sprintf( '%02d', $dt->day );
+    $post->{ pretty_pub_date } = sprintf("%04d-%02d-%02d %02d:%02d:%02d",
+        $post->{year},
+        $post->{month},
+        $post->{day},
+        $dt->hour,
+        $dt->minute,
+        $dt->second       
+    );
 
     return $post;
 }

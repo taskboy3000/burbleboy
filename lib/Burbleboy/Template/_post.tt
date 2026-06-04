@@ -1,95 +1,43 @@
 [%#
    Posts use the h-entry microformat: http://microformats.org/wiki/h-entry
 %]
-<article class="post h-entry">
+<article class="post h-entry" title="A post">
     <div class="text-center text-gray text-shadow bg-primary pt-2 pb-1 mb-4">
         <h2>
           <a class="text-gray u-url u-uid" href="[% post.uri   %]">
             <span class="p-name">[% post.title %]</span>
           </a>
         </h2>
-
     </div>
 
     <div class="content-wrapper">
-        [% IF include_reading_time %]
-            <p class="text-right">
-                <em>
-                    <small>The estimated reading time for this article is about [% post.reading_time %] minute[% post.reading_time == 1 ? "" : "s" %].</small>
-                </em>
-            </p>
-        [% END %]
-
-        <div class="post-content ps-3 pe-3">
-
-            <div class="body e-content"><!-- POST_BODY_START -->[%- post.body %]<!-- POST_BODY_END --></div>
-
-            <div class="footer">
-                <p>
-                    Published by <a class="p-author h-card" href="[% config.base_uri %]">[% config.author_name%]</a>
-                    on <time class="dt-published" datetime="[% post.utc_date.ymd %]T[% post.utc_date.hms %]+00:00">[% post.month_name %] [% post.day %], [% post.year %]</time>
-                    [% IF post.indieweb_sub %]
-                        and posted to <a class="u-syndication" href="[% post.indieweb_sub %]">[% post.indieweb_sub.path %]</a>
-                    [% END %]
-                    .
+        <div class="post-content">
+            [% IF include_reading_time %]
+                <p class="small fst-italic">
+                    The estimated reading time for this article is about [% post.reading_time %] minute[% post.reading_time == 1 ? "" : "s" %].</small>
                 </p>
+            [% END %]
+            <div class="body e-content"><!-- POST_BODY_START -->[%- post.body %]<!-- POST_BODY_END --></div>
+            <div class="footer row small mt-3">
+            <div class="col-6">
+                [% IF post.tags && post.tags.size > 0 %]
+                    <ul class="list-inline tag-list">
+                        <li class="list-inline-item">Tags:</li>
+                        [% FOREACH tag = post.tags %]
+                            <li class="list-inline-item p-category">
+                                <a href="[% tag.uri %]">[% tag.name %]</a>
+                            </li>
+                        [% END %]
+                    </ul>
+                [% END %]
+                </div>
+                <div class="col-6 text-end">
+                    <time datetime="[% post.utc_date %]">[% post.utc_date %]</time>
+                    &middot;
+                    <a href="[% post.uri %]">&Lscr;</a>
+                </div>
             </div>
         </div>
-
-        [% IF post.tags && post.tags.size > 0 %]
-            <ul class="list-inline tag-list">
-                <li class="list-inline-item">Tags:</li>
-                [% FOREACH tag = post.tags %]
-                    <li class="list-inline-item p-category">
-                        <a href="[% tag.uri %]">[% tag.name %]</a>
-                    </li>
-                [% END %]
-            </ul>
-        [% END %]
-
     </div>
-
 </article>
 
-[% IF config.enable_replies %]
-<p class="small">
-    <a href="#" data-bs-toggle="modal" data-bs-target="#mdl-comment-referral-[% post.id %]">💬 Share a response to this post</a>
-</p>
-
-[% IF post.webmentions_summary_uri %]
-    <div class="webmentions">
-        <div class="summary" data-summary-uri="[% post.webmentions_summary_uri %]"><small>loading...</small></div>
-        <div class="display collapse" data-display-uri="[% post.webmentions_display_uri %]"><small>loading...</small></div>
-    </div>
-[% END %]
-
-
-<div class="modal" tabindex="-1" id="mdl-comment-referral-[% post.id %]">
-    <div class="modal-dialog">
-        <form class="form" method="POST" action="[% config.webmention_endpoint %]">
-            <input type="hidden" name="target" value="[% post.uri %]">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Share a response</h5>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <p>To share a response that links to this page from somewhere else on the web, paste its URL here.</p>
-                    <p>
-                        <label>URL to the response</label>
-                        <input class="form-control" name="source" type="text"  placeholder="https://www.example.com/your_post.html"/>
-                    </p>
-
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary">Save changes</button>
-                </div>
-            </div>
-        </form>
-
-    </div>
-</div>
-[% END %]
