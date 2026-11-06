@@ -26,6 +26,7 @@ sub Main {
     test_reading_time();
     test_reading_time_edge_cases();
     test_published_filename();
+    test_legacy_filename_uses_mtime();
     test_bad_date_format();
     test_guid_and_extra_keys();
     test_sanitized_uri();
@@ -318,6 +319,49 @@ EOF
         $post->{ publication_file },
         qr/\Q$post->{published_filename}\E$/,
         'publication_file ends with published_filename'
+    );
+
+    $cleanup->();
+}
+
+sub test_legacy_filename_uses_mtime {
+
+    # Regression: a legacy YYYY-MM-DD- filename with no `time:` header must
+    # derive its time from the file mtime, not DateTime->now().  The published
+    # filename must therefore be deterministic and stable across parses.
+    my $content = <<'EOF';
+title: Legacy Mtime
+
+No time header; date comes from the filename, time from the mtime.
+EOF
+
+    my ( $filepath, $cleanup ) =
+        make_temp_post( $content, '2020-01-15-My-Slug.md' );
+    my $config = test_config();
+
+    # Pin the mtime to a known epoch so the test is timezone- and
+    # wall-clock-independent.
+    my $fixed_epoch = 1579098645;    # 2020-01-15T10:30:45Z
+    utime $fixed_epoch, $fixed_epoch, $filepath
+        or die "Cannot set mtime: $!";
+
+    require DateTime;
+    my $mt =
+        DateTime->from_epoch( epoch => $fixed_epoch, time_zone => 'local' );
+    my $expected_time =
+        sprintf( '%02dh%02dm%02ds', $mt->hour, $mt->minute, $mt->second );
+
+    my $post1 = parse_post( $filepath, $config );
+    my $post2 = parse_post( $filepath, $config );
+
+    like( $post1->{ published_filename },
+        qr/^2020y01m15d_/, 'legacy filename: date comes from the filename' );
+    like( $post1->{ published_filename },
+        qr/_$expected_time-/,
+        'legacy filename: time comes from the file mtime' );
+    is( $post1->{ published_filename },
+        $post2->{ published_filename },
+        'legacy filename: published filename is stable across parses'
     );
 
     $cleanup->();

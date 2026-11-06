@@ -181,15 +181,26 @@ sub _parse_date {
 
     ( $year, $mon, $day ) = $filename =~ /^(\d{4})-(\d{2})-(\d{2})-/;
     if ( $year ) {
+
+        # Legacy filenames carry a date but no time.  Derive the time from
+        # the file's mtime (not DateTime->now()) so the published filename
+        # is deterministic and stable across publish runs.  Using now() here
+        # produced a brand-new output file on every run for these posts.
         require DateTime;
-        my $now = DateTime->now( time_zone => 'local' );
-        my $dt  = DateTime->new(
+        my @stat = stat( $source_file );
+        my $mtime =
+              @stat && defined $stat[ 9 ]
+            ? $stat[ 9 ]
+            : time;
+        my $mt =
+            DateTime->from_epoch( epoch => $mtime, time_zone => 'local' );
+        my $dt = DateTime->new(
             year      => $year,
             month     => $mon,
             day       => $day,
-            hour      => $now->hour,
-            minute    => $now->minute,
-            second    => $now->second,
+            hour      => $mt->hour,
+            minute    => $mt->minute,
+            second    => $mt->second,
             time_zone => 'local',
         );
         my $parser = DateTime::Format::W3CDTF->new;
