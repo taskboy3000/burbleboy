@@ -6,6 +6,8 @@ use lib "$FindBin::Bin/../lib";
 
 use Getopt::Long;
 use Fcntl ':flock';
+use Cwd qw(abs_path);
+use File::Spec;
 use Burbleboy::Config qw(read_config config_defaults home_dir);
 use Burbleboy::Publish qw(:all);
 
@@ -24,6 +26,7 @@ sub Main {
         'publish-only-posts' => \$opts{ publish_only_posts },
         'publish-only-notes' => \$opts{ publish_only_notes },
         'prune'              => \$opts{ prune },
+        'republish=s'        => \$opts{ republish },
         'init'               => \$opts{ init },
         'show-conf'          => \$opts{ show_conf },
         'force'              => \$opts{ force },
@@ -53,11 +56,26 @@ sub Main {
         || $opts{ publish_new }
         || $opts{ publish_only_posts }
         || $opts{ publish_only_notes }
-        || $opts{ prune };
+        || $opts{ prune }
+        || defined $opts{ republish };
 
     unless ( $has_action ) {
         print usage_text();
         exit 0;
+    }
+
+    if ( defined $opts{ republish } ) {
+        my $src = $opts{ republish };
+        if ( -e $src ) {
+            $src = abs_path( $src );
+        }
+        unless ( -e $src ) {
+            die "Republish source file not found: $opts{ republish }\n";
+        }
+        $opts{ _republish_abs } = $src;
+        if ( $opts{ dryrun } || $opts{ prune } || $opts{ publish_all } || $opts{ publish_new } || $opts{ publish_only_posts } || $opts{ publish_only_notes } ) {
+            # allow republish alone? no other flags required; but if user passed only republish, fine
+        }
     }
 
     my $config = read_config( $config_file );
@@ -69,6 +87,24 @@ sub Main {
             my $tt = _setup_template();
             regenerate_aggregates( $config, $tt );
         }
+        exit 0;
+    }
+
+    if ( defined $opts{ republish } ) {
+        my $src = $opts{ _republish_abs } || abs_path( $opts{ republish } ) || $opts{ republish };
+        if ( $opts{ dryrun } ) {
+            say "(dryrun) Would republish: $src and regenerate aggregates.";
+            exit 0;
+        }
+        my $lock_fh = get_lock( $config );
+        my $tt      = _setup_template();
+        eval { republish_source( $src, $config, $tt, \%opts ); 1 }
+            or do {
+            my $err = $@;
+            free_lock( $lock_fh ) if $lock_fh;
+            die $err;
+            };
+        free_lock( $lock_fh ) if $lock_fh;
         exit 0;
     }
 
@@ -104,11 +140,12 @@ COMMANDS:
                          (prompts before overwriting existing config)
 --show-conf              Display current configuration (from file or defaults)
 --publish-all            Republish all known source files
---publish-new            Incremental publish — source mtime > published mtime; skips stale content. Use --force to override.
+--publish-new            Incremental publish — republish any source newer than its published HTML, then regenerate aggregates (front/archive/feeds/tags/notes/JSON). Use --force to republish even if unchanged.
 --publish-only-posts     Publish only new posts; ignore new notes
 --publish-only-notes     Publish only new notes; ignore new posts
 --prune                  Remove published files whose source no longer exists
                          (useful after renaming or deleting source files)
+--republish FILE         Republish a single source file (.md/.txt/etc.) and regenerate all aggregates
 
 OPTIONS:
 

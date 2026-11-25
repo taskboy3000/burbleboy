@@ -20,6 +20,7 @@ our @EXPORT_OK = qw(
     extract_body_from_html fill_body_for_posts fill_body_for_top_n
     run_publish _publish_posts _publish_notes
     prune_orphans regenerate_aggregates
+    republish_source
 );
 our %EXPORT_TAGS = ( all => \@EXPORT_OK );
 
@@ -982,81 +983,39 @@ sub run_publish {
     publish_site_css( $config, $tt );
     publish_site_js( $config, $tt );
 
-    if ( $do_posts ) {
+    if ( $do_posts || $do_notes ) {
         if ( $opts->{ publish_new } ) {
-            if ( @$posts ) {
-                my $all_posts = read_all_meta( $config, 'post' );
-                if ( @$all_posts ) {
-                    fill_body_for_top_n( $all_posts, $pub_dir,
-                        $config->{ show_max_posts } || 5 );
-                    publish_front_page( $config, $tt, $all_posts );
-                    publish_archive_page( $config, $tt, $all_posts );
-                    fill_body_for_posts( $all_posts, $pub_dir );
-                    publish_atom_feed( $config, $tt, $all_posts );
-                    publish_json_feed( $config, $tt, $all_posts );
+            if ( @$posts || @$notes ) {
+                regenerate_aggregates( $config, $tt );
+            } elsif ( $opts->{ verbose } ) {
+                if ( $do_posts && !$do_notes ) {
+                    say "No new posts; skipping aggregate regeneration.";
+                } elsif ( $do_notes && !$do_posts ) {
+                    say "No new notes; skipping aggregate regeneration.";
                 } else {
-                    warn "No meta files found. Run --publish-all first.\n"
-                        if $opts->{ verbose };
+                    say
+                        "No new posts or notes; skipping aggregate regeneration.";
+                }
+            }
+        } else {
+            my $all_posts = read_all_meta( $config, 'post' );
+            my $all_notes = read_all_meta( $config, 'note' );
+            if ( @$all_posts || @$all_notes ) {
+                regenerate_aggregates( $config, $tt );
+            } else {
+                if ( $do_posts ) {
                     publish_front_page( $config, $tt, $posts );
                     publish_archive_page( $config, $tt, $posts );
                     publish_atom_feed( $config, $tt, $posts );
                     publish_json_feed( $config, $tt, $posts );
                 }
-            }
-        } else {
-            my $all_posts = read_all_meta( $config, 'post' );
-            if ( @$all_posts ) {
-                fill_body_for_top_n( $all_posts, $pub_dir,
-                    $config->{ show_max_posts } || 5 );
-                publish_front_page( $config, $tt, $all_posts );
-                publish_archive_page( $config, $tt, $all_posts );
-                fill_body_for_posts( $all_posts, $pub_dir );
-                publish_atom_feed( $config, $tt, $all_posts );
-                publish_json_feed( $config, $tt, $all_posts );
-            } else {
-                publish_front_page( $config, $tt, $posts );
-                publish_archive_page( $config, $tt, $posts );
-                publish_atom_feed( $config, $tt, $posts );
-                publish_json_feed( $config, $tt, $posts );
-            }
-        }
-    }
-
-    if ( $do_notes ) {
-        if ( $opts->{ publish_new } ) {
-            if ( @$notes ) {
-                my $all_notes = read_all_meta( $config, 'note' );
-                if ( @$all_notes ) {
-                    fill_body_for_posts( $all_notes, $pub_dir );
-                    publish_notes_roll( $config, $tt, $all_notes );
-                    publish_notes_json( $config, $tt, $all_notes );
-                } else {
-                    warn
-                        "No note meta files found. Run --publish-all first.\n"
-                        if $opts->{ verbose };
+                if ( $do_notes ) {
                     publish_notes_roll( $config, $tt, $notes );
                     publish_notes_json( $config, $tt, $notes );
                 }
-            } elsif ( $opts->{ verbose } ) {
-                say "No new notes; skipping roll regeneration.";
-            }
-        } else {
-            my $all_notes = read_all_meta( $config, 'note' );
-            if ( @$all_notes ) {
-                fill_body_for_posts( $all_notes, $pub_dir );
-                publish_notes_roll( $config, $tt, $all_notes );
-                publish_notes_json( $config, $tt, $all_notes );
-            } else {
-                publish_notes_roll( $config, $tt, $notes );
-                publish_notes_json( $config, $tt, $notes );
+                publish_tags_index( $config, $tt, $posts, $notes );
             }
         }
-    }
-
-    if ( $do_posts || $do_notes ) {
-        my $all_posts = read_all_meta( $config, 'post' );
-        my $all_notes = read_all_meta( $config, 'note' );
-        publish_tags_index( $config, $tt, $all_posts, $all_notes );
     }
 }
 
@@ -1263,6 +1222,75 @@ sub prune_orphans {
     }
 
     return $pruned;
+}
+
+sub republish_source {
+    my ( $source_path, $config, $tt, $opts ) = @_;
+    $opts ||= {};
+
+    die "Source file not found: $source_path" unless -e $source_path;
+
+    my $kind;
+    my $err_post;
+    my $err_note;
+
+    require Burbleboy::Model::Post;
+    require Burbleboy::Model::Note;
+
+    my $source_dir      = $config->{ source_directory } || $config->{ path };
+    my $notes_dir       = $config->{ source_notes_directory }
+        || ( $source_dir ? "$source_dir/notes" : undef );
+    my $is_under_notes = 0;
+    if ( $notes_dir && $source_path =~ /^\Q$notes_dir\E[\/\\]/ ) {
+        $is_under_notes = 1;
+    }
+
+    if ( $is_under_notes ) {
+        eval { Burbleboy::Model::Note::parse_note( $source_path, $config ); 1 }
+            and $kind = 'note';
+        if ( !$kind && $@ ) {
+            $err_note = $@;
+        }
+        unless ($kind) {
+            eval { Burbleboy::Model::Post::parse_post( $source_path, $config ); 1 }
+                and $kind = 'post';
+            $err_post = $@ if !$kind && $@;
+        }
+    }
+    else {
+        eval { Burbleboy::Model::Post::parse_post( $source_path, $config ); 1 }
+            and $kind = 'post';
+        if ( !$kind && $@ ) {
+            $err_post = $@;
+        }
+        unless ($kind) {
+            eval { Burbleboy::Model::Note::parse_note( $source_path, $config ); 1 }
+                and $kind = 'note';
+            $err_note = $@ if !$kind && $@;
+        }
+    }
+
+    unless ($kind) {
+        my $msg = "Cannot parse '$source_path' as post or note.";
+        $msg .= "\n  post parse: $err_post" if $err_post;
+        $msg .= "\n  note parse: $err_note" if $err_note;
+        die "$msg\n";
+    }
+
+    if ( $kind eq 'post' ) {
+        publish_post( $source_path, $config, $tt );
+        say "Republished post: $source_path" if $opts->{ verbose };
+    }
+    else {
+        publish_note( $source_path, $config, $tt );
+        say "Republished note: $source_path" if $opts->{ verbose };
+    }
+
+    publish_site_css( $config, $tt );
+    publish_site_js( $config, $tt );
+    regenerate_aggregates( $config, $tt );
+
+    return 1;
 }
 
 sub regenerate_aggregates {

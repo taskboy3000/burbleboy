@@ -27,6 +27,8 @@ sub Main {
     test_prune_cli_flag();
     test_prune_help_output();
     test_lock_file_location();
+    test_republish_missing_file_cli();
+    test_republish_dryrun_cli();
     done_testing();
 }
 
@@ -125,6 +127,45 @@ sub test_lock_file_location {
     ok( -f "$site->{ publication_dir }/.burbleboycmd.lock",
         'lock file created in publication directory'
     );
+
+    teardown_test_site( $site );
+}
+
+sub test_republish_missing_file_cli {
+    my $site = setup_test_site();
+    _write_config( $site->{ tmpdir } );
+    _replace_in_file( "$site->{ tmpdir }/.burbleboy.conf",
+        'REPLACE_SOURCE', $site->{ source_dir } );
+    _replace_in_file( "$site->{ tmpdir }/.burbleboy.conf",
+        'REPLACE_PUB', $site->{ publication_dir } );
+
+    local $ENV{ HOME } = $site->{ tmpdir };
+
+    my $missing = File::Spec->catfile( $site->{ source_dir }, 'no-such-file.md' );
+    my $output =
+        `perl "$FindBin::Bin/../bin/burbleboycmd" --republish "$missing" 2>&1`;
+    isnt( $?, 0, '--republish with missing file exits non-zero' );
+    like( $output, qr/not found/i, 'reports missing file' );
+
+    teardown_test_site( $site );
+}
+
+sub test_republish_dryrun_cli {
+    my $site = setup_test_site();
+    _write_config( $site->{ tmpdir } );
+    _replace_in_file( "$site->{ tmpdir }/.burbleboy.conf",
+        'REPLACE_SOURCE', $site->{ source_dir } );
+    _replace_in_file( "$site->{ tmpdir }/.burbleboy.conf",
+        'REPLACE_PUB', $site->{ publication_dir } );
+    _write_source_post( $site->{ source_dir } );
+
+    local $ENV{ HOME } = $site->{ tmpdir };
+
+    my $src = File::Spec->catfile( $site->{ source_dir }, '2024y01m15d_12h00m00s-test-post.md' );
+    my $output =
+        `perl "$FindBin::Bin/../bin/burbleboycmd" --republish "$src" --dryrun --v 2>&1`;
+    is( $?, 0, '--republish --dryrun exits 0' ) or diag $output;
+    like( $output, qr/dryrun|Would republish/i, 'dryrun output mentions republish' );
 
     teardown_test_site( $site );
 }
