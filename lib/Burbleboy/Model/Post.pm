@@ -38,6 +38,8 @@ sub parse_post {
 
     $post->{ tags } = _parse_tags( $headers );
 
+    $post->{ publish_at } = _parse_publish_at( $headers );
+
     $post->{ description } = _extract_description( $post->{ body_html } );
 
     $post->{ reading_time } = _calc_reading_time( $post->{ body_html } );
@@ -88,7 +90,7 @@ sub _read_source {
         or die "Cannot read $filepath: $!";
 
     my %headers;
-    my @ordered_attrs = qw( title time published_filename guid tags );
+    my @ordered_attrs = qw( title time published_filename guid tags publish_at );
     my %seen_ordered;
     my $first_body_line = '';
     my $body            = '';
@@ -342,6 +344,26 @@ sub _build_uri {
     $path =~ s/[[:cntrl:]]//g;
 
     return $base_uri . $path;
+}
+
+sub _parse_publish_at {
+    my ( $headers ) = @_;
+    return undef unless exists $headers->{ publish_at } && $headers->{ publish_at };
+    my $val = $headers->{ publish_at };
+    if ( $val =~ /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})$/) {
+        require DateTime;
+        my $dt = DateTime->new(
+            year   => $1,
+            month  => $2,
+            day    => $3,
+            hour   => $4,
+            minute => $5,
+            second => $6,
+            time_zone => 'local',
+        );
+        return $dt;
+    }
+    die "Invalid publish_at format '$val': expected YYYY-MM-DD HH:MM:SS";
 }
 
 sub _typography {

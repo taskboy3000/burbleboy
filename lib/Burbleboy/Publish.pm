@@ -568,6 +568,15 @@ sub incremental_publish_posts {
         };
         if ( $@ ) { warn "Skipping $file: $@" if $verbose; next; }
 
+        if ( $post->{ publish_at } ) {
+            require DateTime;
+            my $now = DateTime->now( time_zone => 'local' );
+            if ( DateTime->compare( $post->{ publish_at }, $now ) > 0 ) {
+                say "Skipping $file – scheduled for future" if $verbose;
+                next;
+            }
+        }
+
         unless ( $force
             || needs_update( $source_file, $post->{ publication_file } ) )
         {
@@ -1043,6 +1052,15 @@ sub _publish_posts {
         };
         if ( $@ ) { warn "Skipping $file: $@" if $verbose; next; }
 
+        if ( $post->{ publish_at } ) {
+            require DateTime;
+            my $now = DateTime->now( time_zone => 'local' );
+            if ( DateTime->compare( $post->{ publish_at }, $now ) > 0 ) {
+                say "Skipping $file – scheduled for future" if $verbose;
+                next;
+            }
+        }
+
         unless ( $force
             || needs_update( $source_file, $post->{ publication_file } ) )
         {
@@ -1278,6 +1296,15 @@ sub republish_source {
     }
 
     if ( $kind eq 'post' ) {
+        require Burbleboy::Model::Post;
+        my $post = Burbleboy::Model::Post::parse_post( $source_path, $config );
+        if ( $post->{ publish_at } ) {
+            require DateTime;
+            my $now = DateTime->now( time_zone => 'local' );
+            if ( DateTime->compare( $post->{ publish_at }, $now ) > 0 ) {
+                die "Post '$source_path' is scheduled for future publish_at, cannot republish now\n";
+            }
+        }
         publish_post( $source_path, $config, $tt );
         say "Republished post: $source_path" if $opts->{ verbose };
     }

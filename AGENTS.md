@@ -155,6 +155,7 @@ tags: perl, blogging, web
 time: 2024-01-15 10:30:00
 guid: optional-explicit-guid
 published_filename: optional-custom-output-filename.html
+publish_at: 2024-01-20 09:00:00
 
 Body content in Markdown...
 ```
@@ -162,7 +163,11 @@ Body content in Markdown...
 Headers are hand-parsed (no YAML module in the header block). The `time` header
 uses W3CDTF format. Falls back to filename timestamp, then file mtime.
 
-Support metadata: `title`, `time`, `tags`, `guid`, `published_filename`.
+Support metadata: `title`, `time`, `tags`, `guid`, `published_filename`, `publish_at`.
+
+`publish_at` is optional and, when present, must be `YYYY-MM-DD HH:MM:SS` in local time.
+If set to a future datetime the post is skipped by `--publish-new`/`--publish-all` until
+the current local time passes it. `--force` does not override the schedule.
 
 ### Notes (`.txt`)
 
