@@ -34,10 +34,12 @@ sub Main {
         'v|verbose'          => \$opts{ verbose },
         'h|help'             => \$opts{ help },
         'version'            => \$opts{ version },
+        'manual'             => \$opts{ manual },
     ) or do { warn "Try --help for usage.\n"; exit 1; };
 
     if ( $opts{ help } )    { print usage_text();   exit 0; }
     if ( $opts{ version } ) { print version_text(); exit 0; }
+    if ( $opts{ manual } )  { _show_manual();       exit 0; }
 
     my $config_file = home_dir() . '/.burbleboy.conf';
 
@@ -139,6 +141,7 @@ COMMANDS:
 --init                   Create ~/.burbleboy.conf and project directories
                          (prompts before overwriting existing config)
 --show-conf              Display current configuration (from file or defaults)
+--manual                 Show full manual page
 --publish-all            Republish all known source files
 --publish-new            Incremental publish — republish any source newer than its published HTML, then regenerate aggregates (front/archive/feeds/tags/notes/JSON). Use --force to republish even if unchanged.
 --publish-only-posts     Publish only new posts; ignore new notes
@@ -255,4 +258,39 @@ sub free_lock {
     my ( $fh ) = @_;
     flock( $fh, LOCK_UN );
     close( $fh );
+}
+
+sub _show_manual {
+    my $manual_path = "$FindBin::Bin/../MANUAL.md";
+    unless ( -f $manual_path ) {
+        say "Manual not found at $manual_path";
+        return;
+    }
+    binmode STDOUT, ':utf8';
+    open my $fh, '<:encoding(UTF-8)', $manual_path or die "Cannot read manual: $!";
+    local $/;
+    my $text = <$fh>;
+    close $fh;
+    $text = _markdown_to_text($text);
+    print $text;
+}
+
+sub _markdown_to_text {
+    my ($md) = @_;
+    # Simple markdown to plain text conversion
+    $md =~ s/!\[.*?\]\(.*?\)//g;                     # images
+    $md =~ s/\[([^\]]+)\]\([^\)]+\)/$1/g;            # links
+    $md =~ s/`([^`]+)`/$1/g;                         # inline code
+    $md =~ s/\*\*([^*]+)\*\*/$1/g;                   # bold
+    $md =~ s/\*([^*]+)\*/$1/g;                       # italic
+    $md =~ s/^###\s+(.*)$/  $1/mg;                   # h3
+    $md =~ s/^##\s+(.*)$/\n$1\n/mg;                  # h2
+    $md =~ s/^#\s+(.*)$/\n$1\n/mg;                   # h1
+    $md =~ s/^```.*?```//msg;                        # code fences
+    $md =~ s/^`{3,}.*$//mg;                          # code fence lines
+    $md =~ s/^\s*[-*+]\s+/-/mg;                      # list bullets
+    $md =~ s/^>\s?//mg;                              # blockquote
+    $md =~ s/[ \t]+$//mg;                            # trailing ws
+    $md =~ s/\n{3,}/\n\n/g;                          # collapse blanks
+    return $md;
 }
